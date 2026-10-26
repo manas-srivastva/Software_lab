@@ -68,6 +68,8 @@ const StaffQueuePage = () => {
         }
       } catch (err) {
         toastError('Failed to load doctors list');
+      } finally {
+        setLoading(false);
       }
     };
     loadDoctors();
@@ -110,7 +112,9 @@ const StaffQueuePage = () => {
       setAllAppointments(appointments.filter((appointment) => appointment.date === selectedDate));
       setAppointmentsError('');
     } catch (err) {
-      setAppointmentsError(err.message || 'Failed to load hospital bookings.');
+      setAppointmentsError(
+        err.message || `Failed to load ${isOrgAdmin ? 'organisation' : 'clinic'} bookings.`
+      );
     } finally {
       setLoadingAppts(false);
     }
@@ -176,39 +180,44 @@ const StaffQueuePage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Staff Header */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
+      <div className="relative overflow-hidden bg-gradient-to-br from-white via-white to-purple-50 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div className="absolute -right-10 -top-16 w-56 h-56 rounded-full bg-purple-100/60 blur-3xl pointer-events-none" />
+        <div className="relative">
           <div className="flex items-center gap-2">
-            <span className="text-xs uppercase tracking-wider font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200 flex items-center gap-1.5">
+            <span className="text-xs uppercase tracking-wider font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200 inline-flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-purple-600" />
-              Staff Reception & OPD Operations
+              {isOrgAdmin ? 'Organisation Queue Operations' : 'Reception & OPD Operations'}
             </span>
             <span className="text-xs font-semibold text-slate-400">
               Clearance: {user?.role?.toUpperCase()}
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
-            Clinic Queue Control Desk
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-3">
+            {isOrgAdmin ? 'Organisation Queue Desk' : 'Clinic Queue Control Desk'}
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 mt-1 max-w-2xl">
             Manage patient bookings, advance consultation tokens, and coordinate clinic flow.
           </p>
         </div>
 
         {/* Doctor & Date Controls */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="relative grid grid-cols-1 sm:grid-cols-[1fr_1.4fr_auto] items-center gap-2 w-full lg:w-auto lg:min-w-[470px]">
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white"
+            aria-label="Queue date"
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
           />
 
           <select
             value={selectedDoctorId}
             onChange={(e) => setSelectedDoctorId(e.target.value)}
-            className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white"
+            aria-label="Select doctor"
+            disabled={doctors.length === 0}
+            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white disabled:bg-slate-100 focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
           >
+            {doctors.length === 0 && <option value="">No doctors available</option>}
             {doctors.map((d) => (
               <option key={d._id} value={d._id}>
                 {d.name} ({d.specialization})
@@ -218,8 +227,10 @@ const StaffQueuePage = () => {
 
           <button
             onClick={() => fetchQueue(selectedDoctorId, selectedDate)}
-            className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-teal-600 hover:bg-slate-50 transition"
+            disabled={!selectedDoctorId || loading}
+            className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-purple-700 hover:bg-purple-50 transition disabled:opacity-50"
             title="Refresh"
+            aria-label="Refresh queue"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -227,12 +238,12 @@ const StaffQueuePage = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-3 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
         <button
           onClick={() => setActiveTab('queue')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition ${
+          className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
             activeTab === 'queue'
-              ? 'bg-purple-700 text-white shadow-sm'
+              ? 'bg-purple-700 text-white shadow-sm shadow-purple-700/20'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -240,13 +251,13 @@ const StaffQueuePage = () => {
         </button>
         <button
           onClick={() => setActiveTab('appointments')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition ${
+          className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
             activeTab === 'appointments'
-              ? 'bg-purple-700 text-white shadow-sm'
+              ? 'bg-purple-700 text-white shadow-sm shadow-purple-700/20'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          All Hospital Bookings ({allAppointments.length})
+          {isOrgAdmin ? 'Organisation Bookings' : 'Clinic Bookings'} ({allAppointments.length})
         </button>
       </div>
 
@@ -254,20 +265,20 @@ const StaffQueuePage = () => {
         <div className="space-y-6">
           {/* Summary metrics */}
           {doctorQueue && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-              <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Tokens</p>
                 <p className="text-2xl font-black text-slate-900 mt-1">{doctorQueue.summary?.totalTokens || 0}</p>
                 <span className="text-[10px] text-slate-500">Checked in today</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Waiting in Line</p>
                 <p className="text-2xl font-black text-amber-600 mt-1">{doctorQueue.summary?.waitingCount || 0}</p>
                 <span className="text-[10px] text-slate-500">Awaiting consultation</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-teal-700">Currently Serving</p>
                 <p className="text-2xl font-black text-teal-600 mt-1">
                   {doctorQueue.summary?.currentServingToken ? `#${doctorQueue.summary.currentServingToken}` : 'None'}
@@ -275,7 +286,7 @@ const StaffQueuePage = () => {
                 <span className="text-[10px] text-slate-500">{doctorQueue.doctor?.roomNumber}</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Completed</p>
                 <p className="text-2xl font-black text-slate-700 mt-1">{doctorQueue.summary?.completedCount || 0}</p>
                 <span className="text-[10px] text-slate-500">Visits concluded</span>
@@ -284,18 +295,28 @@ const StaffQueuePage = () => {
           )}
 
           {/* Tokens Table with Staff Controls */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
-            <h2 className="text-lg font-bold text-slate-900">
-              Live Queue Tokens for Dr. {doctorQueue?.doctor?.name} ({selectedDate})
-            </h2>
+          <div className="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 border-b border-slate-100 pb-4">
+              <div>
+                <p className="text-xs uppercase tracking-wider font-bold text-purple-700">Live queue</p>
+                <h2 className="text-lg font-bold text-slate-900 mt-1">
+                  {doctorQueue?.doctor?.name || 'Select a doctor'}
+                </h2>
+              </div>
+              <span className="text-xs font-semibold text-slate-500">{selectedDate}</span>
+            </div>
 
             {loading ? (
               <div className="py-12 text-center text-xs text-slate-400">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-600" />
                 Updating tokens...
               </div>
+            ) : !selectedDoctorId ? (
+              <div className="py-12 text-center text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl">
+                No doctor profiles are available for this workspace.
+              </div>
             ) : !doctorQueue?.queueEntries || doctorQueue.queueEntries.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl">
+              <div className="py-12 text-center text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl">
                 No patients have checked in to this queue for {selectedDate}.
               </div>
             ) : (
@@ -399,7 +420,7 @@ const StaffQueuePage = () => {
         </div>
       ) : (
         /* All Hospital Bookings View (Staff Only) */
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
             <h2 className="text-lg font-bold text-slate-900">
               All Hospital Bookings for {selectedDate}

@@ -12,6 +12,7 @@ MediQueue is a full-stack, responsive healthcare web application designed to eli
 - **JWT-Based Authorization:** Secure token issuance with automatic session persistence and expiration handling.
 - **Role-Based Access Control:** Prevents privilege escalation during registration. Only authenticated `patient` users can book appointments; `admin`, `doctor`, and `receptionist` booking attempts are rejected by the API. Staff-only appointment management and queue operations remain restricted by role.
 - **Protected Routes:** Automatic redirection and loading skeletons for unauthenticated visitors.
+- **Role-specific workspaces:** Patients, doctors, receptionists, administrators, organisation admins, and superadmins are directed to role-appropriate dashboards and navigation. API authorization and organisation scoping are enforced by the backend independently of the UI.
 
 ### 2. Doctor Directory & Conflict-Free Booking
 - **Specialist Directory:** Search and filter approved doctors by department, affiliated organisation, city, or address.
@@ -53,9 +54,18 @@ MediQueue is a full-stack, responsive healthcare web application designed to eli
 1. Log in to manage doctors and patients, review appointments, and view reports/departments using the existing admin features.
 2. Admins cannot book appointments or advance queue consultations. They may cancel eligible appointments under the existing staff permissions.
 
+### Organisation admin
+1. Log in to manage the organisation's affiliated doctors, organisation-specific schedules, fees, and rooms.
+2. Review that organisation's appointment summary and open its scoped queue desk to check in patients and manage queue transitions.
+3. Organisation-scoped endpoints reject accounts without a valid organisation assignment and ignore client attempts to select another organisation.
+
+### Superadmin
+1. Log in to the platform dashboard to review organisation applications and view platform-wide activity.
+2. Approve or reject pending organisations; organisation approval does not replace the separate doctor verification workflow.
+
 ### Doctor
 1. Log in to update availability, room details, and average consultation duration.
-2. Review appointments assigned to the doctor's profile.
+2. Review appointments and queue tokens assigned to the doctor's profile.
 3. Consult patients called in by the receptionist, then mark the active consultation completed. A doctor can only complete queue entries assigned to their own doctor profile.
 
 ### Receptionist

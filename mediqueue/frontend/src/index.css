@@ -3,8 +3,40 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-slate-50 text-slate-800 antialiased;
+    background-image: radial-gradient(ellipse at top, rgba(20, 184, 166, 0.045), transparent 42%);
+  }
+
+  ::selection {
+    @apply bg-teal-100 text-teal-950;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgba(13, 148, 136, 0.55);
+    outline-offset: 2px;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 

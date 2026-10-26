@@ -67,21 +67,22 @@ const FindDoctorPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Page Header */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1">
-          <span className="text-xs uppercase tracking-wider font-bold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100">
-            Medical Staff Directory
+      <div className="relative overflow-hidden bg-gradient-to-br from-white via-white to-teal-50 p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="absolute -right-8 -top-16 w-56 h-56 rounded-full bg-teal-100/50 blur-3xl pointer-events-none" />
+        <div className="relative space-y-2">
+          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100">
+            <Stethoscope className="w-3.5 h-3.5" /> Medical staff directory
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Find a Hospital Specialist
+            Find the right specialist
           </h1>
-          <p className="text-sm text-slate-500">
-            Search verified doctors by medical department, expertise, and available consultation hours.
+          <p className="text-sm text-slate-500 max-w-lg">
+            Browse doctors by specialty and location, then choose a time that works for you.
           </p>
         </div>
 
         {/* Search input */}
-        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-center gap-2 max-w-xl w-full">
+        <form onSubmit={handleSearchSubmit} className="relative flex flex-col sm:flex-row items-center gap-2 max-w-xl w-full">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -89,7 +90,7 @@ const FindDoctorPage = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by name or specialty..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white/90 text-sm transition focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
             />
           </div>
           <div className="relative flex-1 w-full">
@@ -100,12 +101,12 @@ const FindDoctorPage = () => {
               onChange={(e) => setLocationTerm(e.target.value)}
               placeholder="City or address..."
               aria-label="Filter by city or address"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white/90 text-sm transition focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
             />
           </div>
           <button
             type="submit"
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 text-sm shadow-sm transition"
+            className="w-full sm:w-auto px-5 py-3 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 text-sm shadow-md shadow-teal-700/20 hover:-translate-y-0.5 transition"
           >
             Search
           </button>
@@ -133,6 +134,14 @@ const FindDoctorPage = () => {
       </div>
 
       {/* Doctor Cards Grid */}
+      {!loading && doctors.length > 0 && (
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+          <p className="text-sm font-semibold text-slate-700">
+            {doctors.length} {doctors.length === 1 ? 'specialist' : 'specialists'} available
+          </p>
+          <p className="text-xs text-slate-400">Verified care providers</p>
+        </div>
+      )}
       {loading ? (
         <div className="py-20 text-center text-slate-400 text-sm">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-teal-600" />
@@ -162,13 +171,13 @@ const FindDoctorPage = () => {
           {doctors.map((doc) => (
             <div
               key={doc._id}
-              className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+              className="group bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-teal-200 transition duration-200 flex flex-col justify-between"
             >
               <div className="space-y-4">
                 {/* Doctor Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 text-teal-700 flex items-center justify-center font-extrabold text-base shrink-0 shadow-sm">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100 text-teal-700 flex items-center justify-center font-extrabold text-base shrink-0 shadow-sm group-hover:scale-105 transition">
                       Dr
                     </div>
                     <div>
@@ -270,7 +279,7 @@ const FindDoctorPage = () => {
                   to={`/book-appointment?doctorId=${doc._id}${
                     doc.organisations?.[0]?._id ? `&orgId=${doc.organisations[0]._id}` : ''
                   }`}
-                  className="w-full py-2.5 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition text-xs flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition text-xs flex items-center justify-center gap-2"
                 >
                   Book with Dr. {doc.name.replace('Dr. ', '')}
                   <ArrowRight className="w-3.5 h-3.5" />

@@ -106,10 +106,12 @@ const MyAppointmentsPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Page Header */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <span className="text-xs uppercase tracking-wider font-bold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100">
-            Patient Medical Records
+      <div className="relative overflow-hidden bg-gradient-to-br from-white via-white to-sky-50 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="absolute -right-10 -top-16 w-56 h-56 rounded-full bg-sky-100/60 blur-3xl pointer-events-none" />
+        <div className="relative">
+          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100">
+            <Calendar className="w-3.5 h-3.5" />
+            Patient medical records
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
             My Appointments
@@ -119,18 +121,19 @@ const MyAppointmentsPage = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="relative flex items-center gap-3">
           <button
             onClick={fetchAppointments}
             title="Refresh appointments"
-            className="p-3 rounded-xl border border-slate-200 text-slate-600 hover:text-teal-600 hover:bg-slate-50 transition"
+            aria-label="Refresh appointments"
+            className="p-3 rounded-xl border border-slate-200 bg-white/80 text-slate-600 hover:text-teal-600 hover:bg-white transition"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
           <Link
             to="/book-appointment"
-            className="px-5 py-3 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-600/30 transition flex items-center gap-2 text-sm"
+            className="px-5 py-3 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-700/20 transition hover:-translate-y-0.5 flex items-center gap-2 text-sm"
           >
             <PlusCircle className="w-4 h-4" />
             Book New
@@ -139,7 +142,7 @@ const MyAppointmentsPage = () => {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+      <div className="flex items-center gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
         {[
           { id: 'all', label: `All (${appointments.length})` },
           {
@@ -163,9 +166,9 @@ const MyAppointmentsPage = () => {
           <button
             key={tab.id}
             onClick={() => setFilterTab(tab.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
               filterTab === tab.id
-                ? 'bg-teal-600 text-white shadow-sm'
+                ? 'bg-teal-600 text-white shadow-sm shadow-teal-700/20'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
@@ -181,8 +184,10 @@ const MyAppointmentsPage = () => {
           Loading your medical appointments...
         </div>
       ) : filteredAppointments.length === 0 ? (
-        <div className="py-16 text-center bg-white rounded-3xl border border-slate-200/80 p-8">
-          <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+        <div className="py-16 text-center bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+          <span className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 mx-auto mb-4 flex items-center justify-center">
+            <Calendar className="w-7 h-7" />
+          </span>
           <h3 className="text-lg font-bold text-slate-800">No appointments found</h3>
           <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto mb-5">
             {filterTab === 'all'
@@ -210,7 +215,7 @@ const MyAppointmentsPage = () => {
             return (
               <div
                 key={appt._id}
-                className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-6"
+                className="group bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-teal-200 transition flex flex-col md:flex-row md:items-center justify-between gap-6"
               >
                 {/* Doctor and Visit Details */}
                 <div className="space-y-3">
@@ -227,7 +232,7 @@ const MyAppointmentsPage = () => {
                   </div>
 
                   <div className="flex items-start gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 text-teal-700 flex items-center justify-center font-black text-sm shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100 text-teal-700 flex items-center justify-center font-black text-sm shrink-0">
                       Dr
                     </div>
                     <div>
@@ -239,7 +244,7 @@ const MyAppointmentsPage = () => {
                       </p>
                       <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        {appt.doctorId?.roomNumber || 'Consultation Room 101'}
+                        {appt.orgId?.name || appt.doctorId?.roomNumber || 'Consultation Room'}
                       </p>
                     </div>
                   </div>

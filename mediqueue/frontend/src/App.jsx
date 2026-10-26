@@ -82,11 +82,11 @@ function App() {
                   }
                 />
 
-                {/* Protected Staff Route: Strictly restricted to receptionist and admin roles */}
+                {/* Reception and organisation operations; hospital admins use doctor management. */}
                 <Route
                   path="/staff/queue"
                   element={
-                    <ProtectedRoute allowedRoles={['receptionist', 'admin', 'superadmin', 'orgAdmin']}>
+                    <ProtectedRoute allowedRoles={['receptionist', 'orgAdmin']}>
                       <StaffQueuePage />
                     </ProtectedRoute>
                   }

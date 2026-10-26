@@ -23,7 +23,7 @@ const Navbar = () => {
   const isDoctor = user?.role === 'doctor';
   const isReceptionist = user?.role === 'receptionist';
   const canUseStaffDesk =
-    ['receptionist', 'admin', 'orgAdmin'].includes(user?.role) ||
+    ['receptionist', 'orgAdmin'].includes(user?.role) ||
     user?.roles?.includes('orgAdmin');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();

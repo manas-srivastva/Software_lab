@@ -10,6 +10,7 @@ const {
 } = require('../controllers/organisationController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
+const { requireOrganisationContext } = require('../middleware/requireOrganisationContext');
 
 const router = express.Router();
 
@@ -21,13 +22,14 @@ router.patch(
   authorizeRoles('superadmin'),
   reviewOrganisation
 );
-router.get('/me', protect, authorizeRoles('orgAdmin'), getMyOrganisation);
-router.get('/me/doctors', protect, authorizeRoles('orgAdmin'), getOrganisationDoctors);
-router.post('/me/doctors', protect, authorizeRoles('orgAdmin'), addDoctorAffiliation);
+router.get('/me', protect, authorizeRoles('orgAdmin'), requireOrganisationContext, getMyOrganisation);
+router.get('/me/doctors', protect, authorizeRoles('orgAdmin'), requireOrganisationContext, getOrganisationDoctors);
+router.post('/me/doctors', protect, authorizeRoles('orgAdmin'), requireOrganisationContext, addDoctorAffiliation);
 router.patch(
   '/me/doctors/:affiliationId',
   protect,
   authorizeRoles('orgAdmin'),
+  requireOrganisationContext,
   updateDoctorAffiliation
 );
 

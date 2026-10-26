@@ -2,17 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Loader2 } from 'lucide-react';
-
-const getRoleDashboard = (role) =>
-  role === 'orgAdmin'
-    ? '/org/dashboard'
-    : role === 'superadmin'
-      ? '/admin/organisations'
-      : role === 'admin' || role === 'receptionist'
-    ? '/staff/queue'
-    : role === 'doctor'
-      ? '/doctor/dashboard'
-      : '/dashboard';
+import getRoleDashboard from '../utils/roleDashboard';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, isAuthenticated, loading } = useAuth();

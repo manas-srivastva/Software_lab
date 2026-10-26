@@ -271,7 +271,15 @@ const getDoctorQueue = async (req, res, next) => {
     const date = req.query.date || getLocalDateString();
     let orgId = typeof req.query.orgId === 'string' ? req.query.orgId : null;
     const isOrgAdmin = req.user?.role === 'orgAdmin' || req.user?.roles?.includes('orgAdmin');
-    if (isOrgAdmin) orgId = req.user.orgId?.toString() || null;
+    if (isOrgAdmin) {
+      orgId = req.user.orgId?.toString() || null;
+      if (!orgId) {
+        return res.status(403).json({
+          success: false,
+          message: 'This organisation administrator account has no organisation assigned',
+        });
+      }
+    }
 
     const doctor = await Doctor.findById(doctorId);
     if (!doctor) {

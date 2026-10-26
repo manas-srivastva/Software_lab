@@ -86,19 +86,22 @@ const DoctorDashboardPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <header className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm">
-        <span className="text-xs uppercase tracking-wider font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100">
-          Doctor Workspace
-        </span>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3">
-          {doctor?.name}
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Update your schedule, review assigned appointments, and complete consultations.
-        </p>
+      <header className="relative overflow-hidden bg-gradient-to-br from-white via-white to-sky-50 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="absolute -right-10 -top-16 w-52 h-52 rounded-full bg-sky-100/60 blur-3xl pointer-events-none" />
+        <div className="relative">
+          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100">
+            <Stethoscope className="w-3.5 h-3.5" /> Doctor workspace
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-3">
+            {doctor?.name}
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Update your schedule, review assigned appointments, and complete consultations.
+          </p>
+        </div>
       </header>
 
-      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-5">
           <Calendar className="w-5 h-5 text-teal-600" />
           Availability
@@ -155,14 +158,14 @@ const DoctorDashboardPage = () => {
         </form>
       </section>
 
-      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between gap-4 mb-5">
           <div>
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Stethoscope className="w-5 h-5 text-teal-600" />
-              Assigned Appointments
+              Appointments &amp; Consultation Queue
             </h2>
-            <p className="text-xs text-slate-500 mt-1">Only appointments assigned to your doctor profile are shown.</p>
+            <p className="text-xs text-slate-500 mt-1">Review your patients, queue tokens, and active consultations.</p>
           </div>
           <button
             type="button"
@@ -220,7 +223,8 @@ const DoctorDashboardPage = () => {
                             {completingId === queueEntry._id ? 'Updating...' : 'Complete Visit'}
                           </button>
                         ) : (
-                          <span className="text-[11px] text-slate-400">
+                          <span className="text-[11px] text-slate-500">
+                            {queueEntry?.tokenNumber ? `Token #${queueEntry.tokenNumber} · ` : ''}
                             {queueEntry?.status || 'Awaiting check-in'}
                           </span>
                         )}

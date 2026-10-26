@@ -4,7 +4,41 @@ import { Activity, Phone, Mail, MapPin, Clock, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext';
 
 const Footer = () => {
-  const { isPatient } = useAuth();
+  const { user, isAuthenticated, isPatient } = useAuth();
+  const isOrgAdmin = user?.role === 'orgAdmin' || user?.roles?.includes('orgAdmin');
+  let quickLinksHeading = 'Administration';
+  let quickLinks = [{ label: 'Doctor Management', to: '/admin/doctors' }];
+
+  if (!isAuthenticated || isPatient) {
+    quickLinksHeading = 'Patient Services';
+    quickLinks = [
+      { label: 'Find Medical Specialists', to: '/doctors' },
+      ...(isPatient ? [{ label: 'Book Appointment Slot', to: '/book-appointment' }] : []),
+      { label: 'Live Queue Token Tracker', to: '/queue' },
+      ...(isPatient
+        ? [
+            { label: 'My Booking History', to: '/appointments' },
+            { label: 'Patient Health Portal', to: '/dashboard' },
+          ]
+        : []),
+    ];
+  } else if (user?.role === 'doctor') {
+    quickLinksHeading = 'Doctor Workspace';
+    quickLinks = [{ label: 'Doctor Workspace', to: '/doctor/dashboard' }];
+  } else if (user?.role === 'receptionist') {
+    quickLinksHeading = 'Reception Tools';
+    quickLinks = [{ label: 'Reception Queue Desk', to: '/staff/queue' }];
+  } else if (isOrgAdmin) {
+    quickLinksHeading = 'Organisation Tools';
+    quickLinks = [
+      { label: 'Organisation Dashboard', to: '/org/dashboard' },
+      { label: 'Organisation Queue Desk', to: '/staff/queue' },
+    ];
+  } else if (user?.role === 'superadmin') {
+    quickLinksHeading = 'Platform Tools';
+    quickLinks = [{ label: 'Platform Administration', to: '/admin/organisations' }];
+  }
+
   return (
     <footer className="bg-slate-900 text-slate-300 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
@@ -24,43 +58,23 @@ const Footer = () => {
             </p>
             <div className="flex items-center gap-2 text-xs text-teal-400 font-medium">
               <ShieldCheck className="w-4 h-4" />
-              <span>HIPAA Compliant & Secure Cloud Infrastructure</span>
+              <span>Privacy-conscious access and secure account sign-in</span>
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider text-white mb-4">
-              Patient Services
+              {quickLinksHeading}
             </h4>
             <ul className="space-y-2.5 text-sm">
-              <li>
-                <Link to="/doctors" className="hover:text-teal-400 transition">
-                  Find Medical Specialists
-                </Link>
-              </li>
-              {isPatient && (
-                <li>
-                  <Link to="/book-appointment" className="hover:text-teal-400 transition">
-                    Book Appointment Slot
+              {quickLinks.map(({ label, to }) => (
+                <li key={to}>
+                  <Link to={to} className="hover:text-teal-400 transition">
+                    {label}
                   </Link>
                 </li>
-              )}
-              <li>
-                <Link to="/queue" className="hover:text-teal-400 transition">
-                  Live Queue Token Tracker
-                </Link>
-              </li>
-              <li>
-                <Link to="/appointments" className="hover:text-teal-400 transition">
-                  My Booking History
-                </Link>
-              </li>
-              <li>
-                <Link to="/dashboard" className="hover:text-teal-400 transition">
-                  Patient Health Portal
-                </Link>
-              </li>
+              ))}
             </ul>
           </div>
 

@@ -52,6 +52,7 @@ const BookAppointmentPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [bookingConfirmation, setBookingConfirmation] = useState(null);
   const [validationError, setValidationError] = useState('');
+  const currentBookingStep = !selectedDoctorId ? 1 : !selectedSlot ? 2 : 3;
 
   // 1. Fetch active doctors
   useEffect(() => {
@@ -170,19 +171,78 @@ const BookAppointmentPage = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Page Header */}
-      <div className="text-center space-y-2">
-        <span className="text-xs uppercase tracking-wider font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
-          Online Appointment Booking
-        </span>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Reserve Your Doctor Consultation
-        </h1>
-        <p className="text-sm text-slate-500 max-w-lg mx-auto">
-          Choose a specialist, check live availability, and confirm your visit without scheduling conflicts.
-        </p>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6 sm:space-y-8">
+      <div className="relative overflow-hidden rounded-3xl border border-teal-100 bg-gradient-to-br from-white via-white to-teal-50/80 p-6 sm:p-8 shadow-sm">
+        <div className="absolute -right-12 -top-20 h-56 w-56 rounded-full bg-teal-100/60 blur-3xl" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-teal-700">
+              <Calendar className="h-3.5 w-3.5" />
+              Online appointment booking
+            </span>
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+                Reserve your consultation
+              </h1>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
+                Choose a specialist, find a time that works for you, and confirm your visit.
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Secure reservation</p>
+              <p className="text-xs text-slate-500">Your booking is protected</p>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {!isStaff && !bookingConfirmation && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <ol
+            aria-label="Appointment booking progress"
+            className="grid grid-cols-3 gap-2 sm:gap-4"
+          >
+            {[
+              { number: 1, label: 'Specialist' },
+              { number: 2, label: 'Date & time' },
+              { number: 3, label: 'Visit details' },
+            ].map((step) => {
+              const isComplete = step.number < currentBookingStep;
+              const isCurrent = step.number === currentBookingStep;
+
+              return (
+                <li
+                  key={step.number}
+                  aria-current={isCurrent ? 'step' : undefined}
+                  className={`flex items-center gap-2 rounded-xl px-2 py-2 sm:gap-3 sm:px-3 ${
+                    isCurrent
+                      ? 'bg-teal-50 text-teal-800'
+                      : isComplete
+                        ? 'text-teal-700'
+                        : 'text-slate-400'
+                  }`}
+                >
+                  <span
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${
+                      isCurrent || isComplete
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {isComplete ? <CheckCircle2 className="h-4 w-4" /> : step.number}
+                  </span>
+                  <span className="text-xs font-bold sm:text-sm">{step.label}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      )}
 
       {/* If logged-in user is staff (admin or receptionist) */}
       {isStaff ? (
@@ -291,7 +351,7 @@ const BookAppointmentPage = () => {
         </div>
       ) : (
         /* Booking Form Card */
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-xl">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200/80 shadow-lg shadow-slate-200/50">
           {validationError && (
             <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2.5">
               <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
@@ -308,13 +368,23 @@ const BookAppointmentPage = () => {
               </label>
 
               {loadingDoctors ? (
-                <div className="p-3 text-sm text-slate-400 bg-slate-50 rounded-xl">
+                <div className="p-4 text-sm text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+                  <Loader2 className="inline h-4 w-4 animate-spin mr-2 text-teal-600" />
                   Loading available physicians...
+                </div>
+              ) : doctors.length === 0 ? (
+                <div className="p-4 text-sm text-slate-600 bg-amber-50 rounded-xl border border-amber-200">
+                  No specialists are available for booking right now. Please check back later or browse the{' '}
+                  <Link to="/doctors" className="font-bold text-teal-700 underline underline-offset-2">
+                    doctor directory
+                  </Link>
+                  .
                 </div>
               ) : (
                 <select
                   value={selectedDoctorId}
                   onChange={handleDoctorChange}
+                  required
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 bg-white"
                 >
                   {doctors.map((d) => (
@@ -410,7 +480,7 @@ const BookAppointmentPage = () => {
                       This doctor is not available on the selected date.
                     </div>
                   )}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                   {slots.map((slotObj) => {
                     const isAvailable = slotObj.isAvailable;
                     const isSelected = selectedSlot === slotObj.time;

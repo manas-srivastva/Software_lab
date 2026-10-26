@@ -10,6 +10,7 @@ const Appointment = require('../models/Appointment');
 const Queue = require('../models/Queue');
 const Organisation = require('../models/Organisation');
 const DoctorAffiliation = require('../models/DoctorAffiliation');
+const generateToken = require('../utils/generateToken');
 
 const request = (port, path, options = {}, body = null) =>
   new Promise((resolve, reject) => {
@@ -66,6 +67,32 @@ const runTenantWorkflowTests = async () => {
     const superadminHeaders = { Authorization: `Bearer ${superadminLogin.data.token}` };
 
     const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    const unassignedOrgAdmin = await User.create({
+      name: `Unassigned Org Admin ${suffix}`,
+      email: `unassigned-org-admin-${suffix}@example.com`,
+      phone: '555-010220',
+      password: 'password123',
+      role: 'orgAdmin',
+    });
+    createdUserIds.push(unassignedOrgAdmin._id);
+    const unassignedOrgAdminHeaders = {
+      Authorization: `Bearer ${generateToken(unassignedOrgAdmin._id, unassignedOrgAdmin.role)}`,
+    };
+    const unscopedAppointments = await request(tenantPort, '/appointments/all', {
+      headers: unassignedOrgAdminHeaders,
+    });
+    assert.strictEqual(unscopedAppointments.status, 403);
+    const unscopedOrganisationDoctors = await request(tenantPort, '/organisations/me/doctors', {
+      headers: unassignedOrgAdminHeaders,
+    });
+    assert.strictEqual(unscopedOrganisationDoctors.status, 403);
+    const unscopedQueue = await request(
+      tenantPort,
+      '/queue/doctor/000000000000000000000000',
+      { headers: unassignedOrgAdminHeaders }
+    );
+    assert.strictEqual(unscopedQueue.status, 403);
+
     const orgA = await request(tenantPort, '/organisations/register', { method: 'POST' }, {
       name: `Org Admin ${suffix}`,
       email: `org-admin-a-${suffix}@example.com`,
@@ -185,14 +212,24 @@ const runTenantWorkflowTests = async () => {
       headers: orgAHeaders,
     });
     assert.strictEqual(ownAppointments.data.count, 1);
+    const attemptedCrossOrgFilter = await request(
+      tenantPort,
+      `/appointments/all?orgId=${orgB.data.organisation._id}`,
+      { headers: orgAHeaders }
+    );
+    assert.strictEqual(attemptedCrossOrgFilter.data.count, 1);
+    assert(attemptedCrossOrgFilter.data.appointments.every(
+      (appointment) => appointment.orgId._id === orgA.data.organisation._id
+    ));
 
     const ownQueue = await request(
       tenantPort,
-      `/queue/doctor/${doctorId}?date=${date}`,
+      `/queue/doctor/${doctorId}?date=${date}&orgId=${orgB.data.organisation._id}`,
       { headers: orgAHeaders }
     );
     assert.strictEqual(ownQueue.status, 200);
     assert.strictEqual(ownQueue.data.queueEntries.length, 1);
+    assert(ownQueue.data.queueEntries.every((entry) => entry.orgId.toString() === orgA.data.organisation._id));
 
     const blockedQueueAdvance = await request(
       tenantPort,

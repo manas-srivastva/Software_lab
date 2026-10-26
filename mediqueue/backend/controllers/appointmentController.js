@@ -189,7 +189,8 @@ const getAppointmentById = async (req, res, next) => {
       : null;
     const isAssignedDoctor = doctor && doctor._id.equals(appointment.doctorId._id);
 
-    const isInOrg = isOrgAdmin && appointment.orgId?.toString() === req.user.orgId?.toString();
+    const isInOrg = isOrgAdmin && req.user.orgId &&
+      appointment.orgId?.toString() === req.user.orgId.toString();
     if (!isOwner && !isStaff && !isAssignedDoctor && !isInOrg) {
       return res.status(403).json({
         success: false,
@@ -229,7 +230,8 @@ const cancelAppointment = async (req, res, next) => {
     const isStaff = ['receptionist', 'admin', 'superadmin'].includes(req.user.role);
     const isOrgAdmin = req.user.role === 'orgAdmin' || req.user.roles?.includes('orgAdmin');
 
-    const isInOrg = isOrgAdmin && appointment.orgId?.toString() === req.user.orgId?.toString();
+    const isInOrg = isOrgAdmin && req.user.orgId &&
+      appointment.orgId?.toString() === req.user.orgId.toString();
     if (!isOwner && !isStaff && !isInOrg) {
       return res.status(403).json({
         success: false,
