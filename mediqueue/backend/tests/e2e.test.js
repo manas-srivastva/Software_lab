@@ -61,23 +61,39 @@ async function runTests() {
   // Test 3: Fetch Doctors from DB
   const docRes = await request('/doctors');
   console.log('3. Fetch Doctors Count:', docRes.data.count >= 6 ? 'PASS' : 'FAIL', `(${docRes.data.count} doctors loaded)`);
-  const doctorLogin = await request('/auth/login', { method: 'POST' }, {
-    email: 'dr.kim@mediqueue.com',
+  const adminLogin = await request('/auth/login', { method: 'POST' }, {
+    email: 'admin@mediqueue.com',
     password: 'password123',
   });
-  const doctorProfile = await request('/doctors/me', {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${doctorLogin.data.token}` },
-  });
-  const doctor = docRes.data.doctors.find(
-    (item) => item._id === doctorProfile.data.doctor?._id
-  );
-  if (!doctor) throw new Error('The demo doctor account must have an approved, active directory profile');
-  const today = getTodayDate();
-  const weekday = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  if (!doctor.availableDays.includes(weekday)) {
-    throw new Error(`The demo doctor is not available on ${weekday}; cannot run same-day check-in tests`);
+  if (adminLogin.status !== 200) {
+    throw new Error('The administrator account must be available to create the E2E doctor fixture');
   }
+  const testDoctorName = `Dr. E2E Test ${Date.now()}`;
+  const testDoctorEmail = `e2e_doctor_${Date.now()}@example.com`;
+  const createdDoctor = await request('/admin/doctors', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminLogin.data.token}` },
+  }, {
+    name: testDoctorName,
+    email: testDoctorEmail,
+    password: 'password123',
+    specialization: 'General Physician',
+    department: 'General Medicine',
+    availableDays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    availableSlots: ['09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM'],
+  });
+  if (createdDoctor.status !== 201) {
+    throw new Error(`Could not create the E2E doctor fixture: ${createdDoctor.data.message}`);
+  }
+  const doctor = createdDoctor.data.doctor;
+  const doctorLogin = await request('/auth/login', { method: 'POST' }, {
+    email: testDoctorEmail,
+    password: 'password123',
+  });
+  if (doctorLogin.status !== 200) {
+    throw new Error(`Could not log in as the E2E doctor: ${doctorLogin.data.message}`);
+  }
+  const today = getTodayDate();
   const availableSlotsResponse = await request(`/doctors/${doctor._id}/slots?date=${today}`);
   const freeSlots = availableSlotsResponse.data.slots.filter((slot) => slot.isAvailable);
   if (freeSlots.length < 2) throw new Error('At least two free slots are required for the E2E workflow');
@@ -101,11 +117,17 @@ async function runTests() {
   const appt1Id = bookRes1.data.appointment?._id;
 
   // Test 5: Prevent Duplicate Booking for Same Doctor, Date, and Time Slot
-  const johnLogin = await request('/auth/login', { method: 'POST' }, {
-    email: 'john.doe@example.com',
+  const johnEmail = `john.doe_${Date.now()}@example.com`;
+  const johnRegistration = await request('/auth/register', { method: 'POST' }, {
+    name: 'John Doe',
+    email: johnEmail,
+    phone: '+1 555-8889',
     password: 'password123',
   });
-  const johnToken = johnLogin.data.token;
+  if (johnRegistration.status !== 201) {
+    throw new Error(`Could not register the second E2E patient: ${johnRegistration.data.message}`);
+  }
+  const johnToken = johnRegistration.data.token;
 
   const bookConflict = await request(
     '/appointments',

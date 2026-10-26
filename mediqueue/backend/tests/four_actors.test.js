@@ -57,9 +57,31 @@ async function testAllFourActors() {
   console.log('1.1 Patient Registration:', regPatient.status === 201 ? 'PASS' : 'FAIL', regPatient.data.user?.email);
   const patientToken = regPatient.data.token;
 
+  const adminLogin = await request('/auth/login', { method: 'POST' }, {
+    email: 'admin@mediqueue.com',
+    password: 'password123',
+  });
+  assert.strictEqual(adminLogin.status, 200, 'The test administrator must be able to log in');
+  const testDoctorName = `Dr. Four Actor ${Date.now()}`;
+  const testDoctorEmail = `four_actor_doctor_${Date.now()}@test.com`;
+  const createTestDoctor = await request('/admin/doctors', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminLogin.data.token}` },
+  }, {
+    name: testDoctorName,
+    email: testDoctorEmail,
+    password: 'password123',
+    specialization: 'General Physician',
+    department: 'General Medicine',
+    availableDays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    availableSlots: ['09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM'],
+  });
+  assert.strictEqual(createTestDoctor.status, 201, 'The workflow must create its own doctor fixture');
+  const testDoctorId = createTestDoctor.data.doctor._id;
+
   // Search doctors
-  const searchDocs = await request('/doctors?search=Kim');
-  const doctor = searchDocs.data.doctors[0];
+  const searchDocs = await request(`/doctors?search=${encodeURIComponent(testDoctorName)}`);
+  const doctor = searchDocs.data.doctors.find((item) => item._id === testDoctorId);
   console.log('1.2 Patient Searches Doctors:', searchDocs.status === 200 && doctor ? 'PASS' : 'FAIL', `Found Dr. ${doctor.name}`);
 
   // Book appointment
@@ -101,7 +123,7 @@ async function testAllFourActors() {
   // ==========================================
   console.log('\n[ACTOR 2: DOCTOR]');
   const docLogin = await request('/auth/login', { method: 'POST' }, {
-    email: 'dr.kim@mediqueue.com',
+    email: testDoctorEmail,
     password: 'password123',
   });
   console.log('2.1 Doctor Logs In:', docLogin.status === 200 ? 'PASS' : 'FAIL', docLogin.data.user?.name);
@@ -205,10 +227,6 @@ async function testAllFourActors() {
   // ACTOR 4: ADMINISTRATOR (ADMIN)
   // ==========================================
   console.log('\n[ACTOR 4: ADMINISTRATOR]');
-  const adminLogin = await request('/auth/login', { method: 'POST' }, {
-    email: 'admin@mediqueue.com',
-    password: 'password123',
-  });
   console.log('4.1 Admin Logs In:', adminLogin.status === 200 ? 'PASS' : 'FAIL', adminLogin.data.user?.name);
   const adminToken = adminLogin.data.token;
 

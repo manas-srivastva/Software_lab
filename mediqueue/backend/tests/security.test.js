@@ -335,10 +335,28 @@ async function runSecurityTests() {
   });
   assert.strictEqual(duplicateBooking.status, 409, 'An occupied doctor slot cannot be booked twice');
 
+  const racePatientEmails = [
+    `sec_race_a_${Date.now()}@example.com`,
+    `sec_race_b_${Date.now()}@example.com`,
+  ];
+  const racePatients = await Promise.all(
+    racePatientEmails.map((email, index) =>
+      request('/auth/register', { method: 'POST' }, {
+        name: `Concurrent Booking Patient ${index + 1}`,
+        email,
+        phone: `+1 555-43${index}0`,
+        password: 'password123',
+      })
+    )
+  );
+  racePatients.forEach((response) =>
+    assert.strictEqual(response.status, 201, 'Concurrent booking patients must be registered')
+  );
+
   const concurrentAttempts = await Promise.all([
     request('/appointments', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${tokenPatientA}` },
+      headers: { Authorization: `Bearer ${racePatients[0].data.token}` },
     }, {
       doctorId: doctor._id,
       date: apptDate,
@@ -347,7 +365,7 @@ async function runSecurityTests() {
     }),
     request('/appointments', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${tokenPatientB}` },
+      headers: { Authorization: `Bearer ${racePatients[1].data.token}` },
     }, {
       doctorId: doctor._id,
       date: apptDate,
@@ -358,7 +376,9 @@ async function runSecurityTests() {
   assert.deepStrictEqual(
     concurrentAttempts.map((response) => response.status).sort(),
     [201, 409],
-    'Exactly one concurrent booking for a doctor slot must succeed'
+    `Exactly one concurrent booking for a doctor slot must succeed (responses: ${JSON.stringify(
+      concurrentAttempts.map(({ status, data }) => ({ status, message: data?.message }))
+    )})`
   );
 
   // TEST 4: Patient A tries to read Patient B's appointment details
@@ -495,11 +515,20 @@ async function runSecurityTests() {
 
   const concurrentWinner = concurrentAttempts.find((response) => response.status === 201);
   const winnerId = concurrentWinner.data.appointment.patientId._id;
-  const winnerToken = winnerId === userA._id ? tokenPatientA : tokenPatientB;
-  const cleanupConcurrentBooking = await request(
+  const winnerToken =
+    winnerId === racePatients[0].data.user._id
+      ? racePatients[0].data.token
+      : racePatients[1].data.token;
+  let cleanupConcurrentBooking = await request(
     `/appointments/${concurrentWinner.data.appointment._id}/cancel`,
     { method: 'PATCH', headers: { Authorization: `Bearer ${winnerToken}` } }
   );
+  if (cleanupConcurrentBooking.status !== 200) {
+    cleanupConcurrentBooking = await request(
+      `/appointments/${concurrentWinner.data.appointment._id}/cancel`,
+      { method: 'PATCH', headers: { Authorization: `Bearer ${winnerToken}` } }
+    );
+  }
   assert.strictEqual(cleanupConcurrentBooking.status, 200, 'Concurrent test appointment should be cleaned up');
 
   // TEST 10: Anonymous/Public viewer queries doctor queue -> sensitive data masked
