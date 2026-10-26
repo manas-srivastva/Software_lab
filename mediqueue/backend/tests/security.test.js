@@ -159,14 +159,37 @@ async function runSecurityTests() {
 
   // TEST 3: Staff (Admin / Receptionist) tries to book an appointment -> Must be 403 Forbidden!
   const docRes = await request('/doctors');
-  const doctor = docRes.data.doctors.find((item) => item.name === 'Dr. David Kim');
-  assert(doctor, 'The doctor login must be associated with a doctor profile');
-  assert.strictEqual(doctor.email, undefined, 'Public doctor listings must omit account email');
-  assert.strictEqual(doctor.userId, undefined, 'Public doctor listings must omit linked account IDs');
-  const publicDoctorDetails = await request(`/doctors/${doctor._id}`);
+  const loggedInDoctor = docRes.data.doctors.find((item) => item.name === 'Dr. David Kim');
+  assert(loggedInDoctor, 'The doctor login must be associated with a doctor profile');
+  assert.strictEqual(loggedInDoctor.email, undefined, 'Public doctor listings must omit account email');
+  assert.strictEqual(loggedInDoctor.userId, undefined, 'Public doctor listings must omit linked account IDs');
+  const publicDoctorDetails = await request(`/doctors/${loggedInDoctor._id}`);
   assert.strictEqual(publicDoctorDetails.status, 200);
   assert.strictEqual(publicDoctorDetails.data.doctor.email, undefined);
   assert.strictEqual(publicDoctorDetails.data.doctor.userId, undefined);
+
+  const securityDoctorName = `Dr Security ${Date.now()}`;
+  const createdDoctor = await request('/admin/doctors', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${tokenAdmin}` },
+  }, {
+    name: securityDoctorName,
+    email: `sec_doctor_${Date.now()}@example.com`,
+    password: 'password123',
+    specialization: 'General Physician',
+    department: 'General Medicine',
+    availableDays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  });
+  assert.strictEqual(createdDoctor.status, 201, 'The security test must create its own doctor fixture');
+  const securityDoctorLogin = await request('/auth/login', { method: 'POST' }, {
+    email: createdDoctor.data.doctor.email,
+    password: 'password123',
+  });
+  assert.strictEqual(securityDoctorLogin.status, 200, 'The security test doctor must be able to log in');
+  const securityDoctorToken = securityDoctorLogin.data.token;
+  const securityDoctorDirectory = await request('/doctors');
+  const doctor = securityDoctorDirectory.data.doctors.find((item) => item.name === securityDoctorName);
+  assert(doctor, 'The security test doctor must appear in the public directory');
   const apptDate = getTodayDate();
   const availability = await request(`/doctors/${doctor._id}/slots?date=${apptDate}`);
   const freeSlots = availability.data.slots.filter((slot) => slot.isAvailable);
@@ -450,7 +473,7 @@ async function runSecurityTests() {
 
   const completeFirstConsultation = await request(`/queue/${queueEntryId}/advance`, {
     method: 'PATCH',
-    headers: { Authorization: `Bearer ${tokenDoctor}` },
+    headers: { Authorization: `Bearer ${securityDoctorToken}` },
   }, { targetStatus: 'completed' });
   assert.strictEqual(completeFirstConsultation.status, 200);
   const completedAppointment = await request(`/appointments/${apptBId}`, {
@@ -466,7 +489,7 @@ async function runSecurityTests() {
 
   const completeSecondConsultation = await request(`/queue/${secondQueueEntryId}/advance`, {
     method: 'PATCH',
-    headers: { Authorization: `Bearer ${tokenDoctor}` },
+    headers: { Authorization: `Bearer ${securityDoctorToken}` },
   }, { targetStatus: 'completed' });
   assert.strictEqual(completeSecondConsultation.status, 200);
 

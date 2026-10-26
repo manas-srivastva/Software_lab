@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   Stethoscope,
+  Building2,
   LayoutDashboard,
   ShieldAlert,
   ShieldCheck,
@@ -17,7 +18,8 @@ import {
 
 const Navbar = () => {
   const { user, isAuthenticated, logout, isPatient, isStaff } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = ['admin', 'superadmin'].includes(user?.role);
+  const isOrgAdmin = user?.role === 'orgAdmin' || user?.roles?.includes('orgAdmin');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -89,7 +91,7 @@ const Navbar = () => {
                     My Appointments
                   </NavLink>
                 )}
-                {!isStaff && (
+                {(isPatient || user?.role === 'doctor') && (
                   isPatient ? (
                   <NavLink to="/dashboard" className={navLinkClass}>
                     <LayoutDashboard className="w-4 h-4" />
@@ -118,6 +120,18 @@ const Navbar = () => {
                   >
                     <ShieldAlert className="w-4 h-4 text-indigo-600" />
                     Manage Doctors
+                  </NavLink>
+                )}
+                {isOrgAdmin && (
+                  <NavLink to="/org/dashboard" className={navLinkClass}>
+                    <Building2 className="w-4 h-4" />
+                    Organisation
+                  </NavLink>
+                )}
+                {user?.role === 'superadmin' && (
+                  <NavLink to="/admin/organisations" className={navLinkClass}>
+                    <ShieldCheck className="w-4 h-4" />
+                    Approve Organisations
                   </NavLink>
                 )}
               </>
@@ -162,6 +176,12 @@ const Navbar = () => {
                   className="px-4 py-2 text-sm font-semibold text-teal-700 hover:text-teal-800 hover:bg-teal-50 rounded-xl transition border border-teal-200"
                 >
                   Join as Doctor
+                </Link>
+                <Link
+                  to="/register-organisation"
+                  className="px-4 py-2 text-sm font-semibold text-indigo-700 hover:text-indigo-800 hover:bg-indigo-50 rounded-xl transition border border-indigo-200"
+                >
+                  Register Organisation
                 </Link>
                 <Link
                   to="/login"
@@ -247,7 +267,7 @@ const Navbar = () => {
                   My Appointments
                 </NavLink>
               )}
-              {!isStaff && (
+              {(isPatient || user?.role === 'doctor') && (
                 isPatient ? (
                 <NavLink
                   to="/dashboard"
@@ -288,6 +308,25 @@ const Navbar = () => {
                   Manage Doctors
                 </NavLink>
               )}
+              {isOrgAdmin && (
+                <NavLink
+                  to="/org/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={mobileNavLinkClass}
+                >
+                  <Building2 className="w-4 h-4 text-teal-600" />
+                  Organisation Dashboard
+                </NavLink>
+              )}
+              {user?.role === 'superadmin' && (
+                <NavLink
+                  to="/admin/organisations"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={mobileNavLinkClass}
+                >
+                  Approve Organisations
+                </NavLink>
+              )}
               <button
                 onClick={handleLogout}
                 className="w-full text-left font-medium px-4 py-3 rounded-xl flex items-center gap-2.5 text-rose-600 hover:bg-rose-50 transition"
@@ -304,6 +343,13 @@ const Navbar = () => {
                 className="w-full text-center py-2.5 rounded-xl font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition"
               >
                 Join as Doctor
+              </Link>
+              <Link
+                to="/register-organisation"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center py-2.5 rounded-xl font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition"
+              >
+                Register Organisation
               </Link>
               <Link
                 to="/login"

@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ArrowRight,
   Filter,
+  Building2,
 } from 'lucide-react';
 
 const FindDoctorPage = () => {
@@ -23,15 +24,20 @@ const FindDoctorPage = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [locationTerm, setLocationTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
   const [departments, setDepartments] = useState(['All']);
 
-  const fetchDoctors = async () => {
+  const fetchDoctors = async (filters = {}) => {
     setLoading(true);
     try {
       const params = {};
-      if (searchTerm.trim()) params.search = searchTerm.trim();
-      if (selectedDept !== 'All') params.department = selectedDept;
+      const nextSearchTerm = filters.search ?? searchTerm;
+      const nextLocationTerm = filters.location ?? locationTerm;
+      const nextDepartment = filters.department ?? selectedDept;
+      if (nextSearchTerm.trim()) params.search = nextSearchTerm.trim();
+      if (nextLocationTerm.trim()) params.location = nextLocationTerm.trim();
+      if (nextDepartment !== 'All') params.department = nextDepartment;
 
       const res = await doctorAPI.getDoctors(params);
       const list = res.data.doctors || [];
@@ -75,7 +81,7 @@ const FindDoctorPage = () => {
         </div>
 
         {/* Search input */}
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 max-w-md w-full">
+        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-center gap-2 max-w-xl w-full">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -86,9 +92,20 @@ const FindDoctorPage = () => {
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
             />
           </div>
+          <div className="relative flex-1 w-full">
+            <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={locationTerm}
+              onChange={(e) => setLocationTerm(e.target.value)}
+              placeholder="City or address..."
+              aria-label="Filter by city or address"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+            />
+          </div>
           <button
             type="submit"
-            className="px-4 py-2.5 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 text-sm shadow-sm transition"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 text-sm shadow-sm transition"
           >
             Search
           </button>
@@ -131,7 +148,9 @@ const FindDoctorPage = () => {
           <button
             onClick={() => {
               setSearchTerm('');
+              setLocationTerm('');
               setSelectedDept('All');
+              fetchDoctors({ search: '', location: '', department: 'All' });
             }}
             className="px-4 py-2 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition"
           >
@@ -166,6 +185,21 @@ const FindDoctorPage = () => {
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     Available
                   </span>
+                </div>
+
+                <div className="flex items-start gap-2 text-xs text-slate-600">
+                  <Building2 className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                  <div>
+                    {(doc.organisations?.length
+                      ? doc.organisations
+                      : [{ _id: 'legacy', name: doc.clinicHospitalName, city: '' }]
+                    ).map((organisation) => (
+                      <p key={organisation._id}>
+                        <span className="font-semibold text-slate-700">{organisation.name}</span>
+                        {organisation.city ? ` · ${organisation.city}` : ''}
+                      </p>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Badges / Credentials */}
@@ -233,7 +267,9 @@ const FindDoctorPage = () => {
               {/* Action Button */}
               {isPatient && <div className="mt-6 pt-4 border-t border-slate-100">
                 <Link
-                  to={`/book-appointment?doctorId=${doc._id}`}
+                  to={`/book-appointment?doctorId=${doc._id}${
+                    doc.organisations?.[0]?._id ? `&orgId=${doc.organisations[0]._id}` : ''
+                  }`}
                   className="w-full py-2.5 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition text-xs flex items-center justify-center gap-2"
                 >
                   Book with Dr. {doc.name.replace('Dr. ', '')}

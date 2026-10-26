@@ -10,7 +10,8 @@
     "test:security": "cd backend && npm run test:security",
     "test:workflows": "cd backend && npm run test:workflows",
     "test:auth-config": "cd backend && npm run test:auth-config",
-    "test:dates": "cd backend && npm run test:dates"
+    "test:dates": "cd backend && npm run test:dates",
+    "test:tenants": "cd backend && npm run test:tenants"
   },
   "author": "MediQueue Team",
   "license": "ISC"

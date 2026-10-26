@@ -19,8 +19,12 @@ router.get('/my', authorizeRoles('patient'), getMyAppointments);
 // Doctor Only: View own appointments
 router.get('/doctor/me', authorizeRoles('doctor'), getDoctorAppointments);
 // Staff Only: Receptionist and Admin can view all clinic bookings
-router.get('/all', authorizeRoles('receptionist', 'admin'), getAllAppointments);
+router.get('/all', authorizeRoles('receptionist', 'admin', 'superadmin', 'orgAdmin'), getAllAppointments);
 router.get('/:id', getAppointmentById);
-router.patch('/:id/cancel', authorizeRoles('patient', 'receptionist', 'admin'), cancelAppointment);
+router.patch(
+  '/:id/cancel',
+  authorizeRoles('patient', 'receptionist', 'admin', 'superadmin', 'orgAdmin'),
+  cancelAppointment
+);
 
 module.exports = router;

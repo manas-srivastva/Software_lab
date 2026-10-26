@@ -18,7 +18,7 @@ const { protect } = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
 
 router.use(protect);
-router.use(authorizeRoles('admin'));
+router.use(authorizeRoles('admin', 'superadmin'));
 
 // System reports & analytics
 router.get('/reports', getSystemReports);

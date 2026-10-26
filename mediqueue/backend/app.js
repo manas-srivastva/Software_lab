@@ -9,6 +9,7 @@ const queueRoutes = require('./routes/queueRoutes');
 const receptionistRoutes = require('./routes/receptionistRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const organisationRoutes = require('./routes/organisationRoutes');
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use('/api/queue', queueRoutes);
 app.use('/api/receptionist', receptionistRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/organisations', organisationRoutes);
 
 // Error Handling Middlewares
 app.use(notFound);

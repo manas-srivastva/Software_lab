@@ -4,6 +4,7 @@ const http = require('http');
 const app = require('./app');
 const { connectDB } = require('./config/db');
 const Doctor = require('./models/Doctor');
+const User = require('./models/User');
 const seedDatabase = require('./utils/seedData');
 
 const PORT = process.env.PORT || 5000;
@@ -14,6 +15,27 @@ const startServer = async () => {
 
     // Connect to database
     await connectDB();
+
+    if (process.env.SUPERADMIN_EMAIL || process.env.SUPERADMIN_PASSWORD) {
+      if (!process.env.SUPERADMIN_EMAIL || !process.env.SUPERADMIN_PASSWORD) {
+        throw new Error('Set both SUPERADMIN_EMAIL and SUPERADMIN_PASSWORD to bootstrap the platform administrator');
+      }
+      const email = process.env.SUPERADMIN_EMAIL.toLowerCase().trim();
+      const existingSuperAdmin = await User.findOne({ email });
+      if (existingSuperAdmin && existingSuperAdmin.role !== 'superadmin') {
+        throw new Error('SUPERADMIN_EMAIL already belongs to a non-superadmin account');
+      }
+      if (!existingSuperAdmin) {
+        await User.create({
+          name: process.env.SUPERADMIN_NAME || 'Platform Superadmin',
+          email,
+          phone: process.env.SUPERADMIN_PHONE || '0000000000',
+          password: process.env.SUPERADMIN_PASSWORD,
+          role: 'superadmin',
+        });
+        console.log('[Bootstrap] Platform superadmin account created from environment configuration');
+      }
+    }
 
     // Auto-seed doctors if collection is empty
     const doctorCount = await Doctor.countDocuments();

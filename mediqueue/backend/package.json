@@ -12,7 +12,9 @@
     "test:workflows": "node tests/four_actors.test.js",
     "test:auth-config": "node tests/jwtSecret.test.js",
     "test:dates": "node tests/appointmentDate.test.js",
-    "test:onboarding": "node tests/doctor_onboarding.test.js"
+    "test:onboarding": "node tests/doctor_onboarding.test.js",
+    "test:directory": "node tests/doctor_directory.test.js",
+    "test:tenants": "node tests/tenant_workflow.test.js"
   },
   "keywords": [
     "mediqueue",

@@ -2,6 +2,7 @@ require('dotenv').config({ path: __dirname + '/../.env' });
 const http = require('http');
 const assert = require('assert');
 const { connectDB, disconnectDB } = require('../config/db');
+const User = require('../models/User');
 const app = require('../app');
 
 let API_PORT = 5000;
@@ -40,6 +41,14 @@ async function request(path, options = {}, body = null) {
 
 async function runOnboardingTests() {
   await connectDB();
+  const superadminEmail = `superadmin_${Date.now()}@example.com`;
+  const superadmin = await User.create({
+    name: 'Test Platform Superadmin',
+    email: superadminEmail,
+    phone: '555-010101',
+    password: 'password123',
+    role: 'superadmin',
+  });
   serverInstance = await new Promise((resolve) => {
     const s = app.listen(0, () => {
       API_PORT = s.address().port;
@@ -60,6 +69,13 @@ async function runOnboardingTests() {
   assert.strictEqual(adminLogin.status, 200, 'Admin login should succeed');
   const adminToken = adminLogin.data.token;
   console.log('✓ 1. Admin authenticated successfully');
+
+  const superadminLogin = await request('/auth/login', { method: 'POST' }, {
+    email: superadminEmail,
+    password: 'password123',
+  });
+  assert.strictEqual(superadminLogin.status, 200, 'Superadmin login should succeed');
+  const superadminToken = superadminLogin.data.token;
 
   // 2. Register a Patient
   const patientEmail = `patient_verify_${Date.now()}@example.com`;
@@ -125,6 +141,8 @@ async function runOnboardingTests() {
 
   // Verify server ignored client-supplied role, status, and isActive
   assert.strictEqual(appliedUser.role, 'doctor', 'Role must strictly default to doctor');
+  assert(appliedUser.roles.includes('orgAdmin'), 'Independent doctor must also have orgAdmin permissions');
+  assert(appliedUser.orgId, 'Independent doctor must own an auto-created practice');
   assert.strictEqual(appliedDoctor.verificationStatus, 'PENDING', 'Status must strictly default to PENDING');
   assert.strictEqual(appliedDoctor.isActive, false, 'Doctor must strictly default to inactive until approved');
   console.log('✓ 3b. Privilege escalation thwarted: doctor defaults to PENDING & inactive (201)');
@@ -264,6 +282,20 @@ async function runOnboardingTests() {
   assert.strictEqual(approveRes.data.doctor.isActive, true);
   console.log('✓ 6e. Admin approves doctor (status -> APPROVED, isActive -> true)');
 
+  const pendingPracticeSearch = await request(`/doctors?search=Foster`);
+  assert.strictEqual(
+    pendingPracticeSearch.data.doctors.some((doctor) => doctor._id === appliedDoctor._id),
+    false,
+    'Doctor must remain hidden until their practice is approved'
+  );
+
+  const organisationApproval = await request(
+    `/organisations/superadmin/${appliedUser.orgId}/approve`,
+    { method: 'PATCH', headers: { Authorization: `Bearer ${superadminToken}` } }
+  );
+  assert.strictEqual(organisationApproval.status, 200, 'Superadmin approves independent practice');
+  assert.strictEqual(organisationApproval.data.organisation.isActive, true);
+
   // 7. Approved Doctor Listing, Availability & Booking Rules
   // 7a. Approved doctor now appears in patient search
   const patientSearchAfter = await request(`/doctors?search=Foster`);
@@ -395,6 +427,7 @@ async function runOnboardingTests() {
     if (serverInstance) {
       serverInstance.close();
     }
+    await User.deleteOne({ _id: superadmin._id });
     await disconnectDB();
   }
 }

@@ -25,10 +25,12 @@ const BookAppointmentPage = () => {
   const { success, error: toastError } = useToast();
 
   const preselectedDoctorId = searchParams.get('doctorId') || '';
+  const preselectedOrgId = searchParams.get('orgId') || '';
 
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState(preselectedDoctorId);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [selectedOrgId, setSelectedOrgId] = useState(preselectedOrgId);
 
   // Default to today's date in YYYY-MM-DD
   const getTodayDate = () => {
@@ -61,10 +63,16 @@ const BookAppointmentPage = () => {
 
         if (preselectedDoctorId) {
           const match = docs.find((d) => d._id === preselectedDoctorId);
-          if (match) setSelectedDoctor(match);
+          if (match) {
+            setSelectedDoctor(match);
+            setSelectedOrgId(
+              preselectedOrgId || match.organisations?.[0]?._id || ''
+            );
+          }
         } else if (docs.length > 0) {
           setSelectedDoctorId(docs[0]._id);
           setSelectedDoctor(docs[0]);
+          setSelectedOrgId(docs[0].organisations?.[0]?._id || '');
         }
       } catch (err) {
         toastError('Failed to load doctors list');
@@ -74,7 +82,7 @@ const BookAppointmentPage = () => {
     };
 
     loadDoctors();
-  }, [preselectedDoctorId]);
+  }, [preselectedDoctorId, preselectedOrgId]);
 
   // Update selectedDoctor when dropdown changes
   const handleDoctorChange = (e) => {
@@ -82,6 +90,7 @@ const BookAppointmentPage = () => {
     setSelectedDoctorId(docId);
     const found = doctors.find((d) => d._id === docId);
     setSelectedDoctor(found || null);
+    setSelectedOrgId(found?.organisations?.[0]?._id || '');
     setSelectedSlot('');
   };
 
@@ -93,9 +102,12 @@ const BookAppointmentPage = () => {
       setLoadingSlots(true);
       setSelectedSlot('');
       try {
-        const res = await doctorAPI.getDoctorSlots(selectedDoctorId, date);
+        const res = await doctorAPI.getDoctorSlots(selectedDoctorId, date, selectedOrgId || undefined);
         setSlots(res.data.slots || []);
         setDoctorAvailable(res.data.doctorAvailable);
+        if (res.data.orgId && res.data.orgId !== selectedOrgId) {
+          setSelectedOrgId(res.data.orgId);
+        }
       } catch (err) {
         setSlots([]);
         setDoctorAvailable(false);
@@ -106,7 +118,7 @@ const BookAppointmentPage = () => {
     };
 
     fetchSlots();
-  }, [selectedDoctorId, date, selectedDoctor]);
+  }, [selectedDoctorId, date, selectedDoctor, selectedOrgId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -141,6 +153,7 @@ const BookAppointmentPage = () => {
     try {
       const res = await appointmentAPI.createAppointment({
         doctorId: selectedDoctorId,
+        ...(selectedOrgId ? { orgId: selectedOrgId } : {}),
         date,
         time: selectedSlot,
         reason: reason.trim(),
@@ -317,12 +330,34 @@ const BookAppointmentPage = () => {
                 <div className="mt-2.5 p-3 rounded-xl bg-teal-50/70 border border-teal-100 flex items-center justify-between text-xs text-teal-900">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                    <span>Location: {selectedDoctor.roomNumber}</span>
+                    <span>
+                      Location: {selectedDoctor.organisations?.find((org) => org._id === selectedOrgId)?.name ||
+                        selectedDoctor.clinicHospitalName ||
+                        selectedDoctor.roomNumber}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                     <span>Avg. Consultation: ~{selectedDoctor.averageConsultationMinutes} min</span>
                   </div>
+                </div>
+              )}
+              {selectedDoctor?.organisations?.length > 1 && (
+                <div className="mt-3">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Select Organisation
+                  </label>
+                  <select
+                    value={selectedOrgId}
+                    onChange={(event) => setSelectedOrgId(event.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:border-teal-500 bg-white"
+                  >
+                    {selectedDoctor.organisations.map((organisation) => (
+                      <option key={organisation._id} value={organisation._id}>
+                        {organisation.name}{organisation.city ? ` — ${organisation.city}` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
             </div>

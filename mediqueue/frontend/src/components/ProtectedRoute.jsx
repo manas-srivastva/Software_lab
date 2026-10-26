@@ -4,7 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 const getRoleDashboard = (role) =>
-  role === 'admin' || role === 'receptionist'
+  role === 'orgAdmin'
+    ? '/org/dashboard'
+    : role === 'superadmin'
+      ? '/admin/organisations'
+      : role === 'admin' || role === 'receptionist'
     ? '/staff/queue'
     : role === 'doctor'
       ? '/doctor/dashboard'
@@ -29,7 +33,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   // Role restriction check
-  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
+  const userRoles = new Set([user?.role, ...(user?.roles || [])]);
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.some((role) => userRoles.has(role))) {
     return <Navigate to={getRoleDashboard(user?.role)} replace />;
   }
 

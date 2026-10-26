@@ -16,7 +16,7 @@ router.get('/doctor/:doctorId', optionalAuth, getDoctorQueue);
 router.post(
   '/check-in/:appointmentId',
   protect,
-  authorizeRoles('patient', 'receptionist'),
+  authorizeRoles('patient', 'receptionist', 'orgAdmin'),
   checkInAppointment
 );
 router.get('/my-status', protect, authorizeRoles('patient'), getMyQueueStatus);
@@ -25,7 +25,7 @@ router.get('/my-status', protect, authorizeRoles('patient'), getMyQueueStatus);
 router.patch(
   '/:id/advance',
   protect,
-  authorizeRoles('doctor', 'receptionist'),
+  authorizeRoles('doctor', 'receptionist', 'orgAdmin'),
   advanceQueue
 );
 

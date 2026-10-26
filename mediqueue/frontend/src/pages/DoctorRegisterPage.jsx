@@ -35,6 +35,7 @@ const DoctorRegisterPage = () => {
     experienceYears: 5,
     clinicHospitalName: 'MediQueue Health Center',
     clinicAddress: '',
+    city: '',
     roomNumber: 'Room 101',
     availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
     availableSlots: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
@@ -133,6 +134,7 @@ const DoctorRegisterPage = () => {
         experienceYears: Number(formData.experienceYears) || 0,
         clinicHospitalName: formData.clinicHospitalName.trim(),
         clinicAddress: formData.clinicAddress.trim(),
+        city: formData.city.trim(),
         roomNumber: formData.roomNumber.trim(),
         availableDays: formData.availableDays,
         availableSlots: formData.availableSlots,
@@ -333,6 +335,17 @@ const DoctorRegisterPage = () => {
                   name="roomNumber"
                   placeholder="OPD Suite 204"
                   value={formData.roomNumber}
+                  onChange={handleChange}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Practice City</label>
+                <input
+                  type="text"
+                  name="city"
+                  placeholder="City"
+                  value={formData.city}
                   onChange={handleChange}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                 />

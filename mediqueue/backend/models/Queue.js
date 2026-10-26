@@ -18,6 +18,12 @@ const queueSchema = new mongoose.Schema(
       ref: 'Doctor',
       required: [true, 'Doctor ID is required'],
     },
+    orgId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organisation',
+      default: null,
+      index: true,
+    },
     date: {
       type: String,
       required: [true, 'Queue date is required (YYYY-MM-DD)'],

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { doctorAPI, queueAPI, appointmentAPI } from '../services/api';
+import { doctorAPI, queueAPI, appointmentAPI, organisationAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import StatusBadge from '../components/StatusBadge';
@@ -39,6 +39,7 @@ const StaffQueuePage = () => {
   const [appointmentToCancel, setAppointmentToCancel] = useState(null);
   const [cancellingAppointmentId, setCancellingAppointmentId] = useState(null);
   const knownAppointmentIds = useRef(null);
+  const isOrgAdmin = user?.role === 'orgAdmin' || user?.roles?.includes('orgAdmin');
 
   const getTodayDate = () => {
     const today = new Date();
@@ -54,8 +55,13 @@ const StaffQueuePage = () => {
   useEffect(() => {
     const loadDoctors = async () => {
       try {
-        const res = await doctorAPI.getDoctors();
-        const list = res.data.doctors || [];
+        const isOrgAdmin = user?.role === 'orgAdmin' || user?.roles?.includes('orgAdmin');
+        const res = isOrgAdmin
+          ? await organisationAPI.getMyDoctors()
+          : await doctorAPI.getDoctors();
+        const list = isOrgAdmin
+          ? (res.data.affiliations || []).map((affiliation) => affiliation.doctorId).filter(Boolean)
+          : res.data.doctors || [];
         setDoctors(list);
         if (list.length > 0) {
           setSelectedDoctorId(list[0]._id);
@@ -65,7 +71,7 @@ const StaffQueuePage = () => {
       }
     };
     loadDoctors();
-  }, []);
+  }, [user]);
 
   // Fetch queue for doctor & date
   const fetchQueue = async (docId, date) => {
@@ -349,7 +355,7 @@ const StaffQueuePage = () => {
 
                           <td className="py-3.5 px-4 text-right">
                             <div className="inline-flex items-center gap-2 justify-end">
-                              {isWaiting && user?.role === 'receptionist' && (
+                              {isWaiting && (user?.role === 'receptionist' || isOrgAdmin) && (
                                 <button
                                   onClick={() => handleAdvance(item._id, 'in-consultation')}
                                   disabled={advancingId === item._id}
@@ -361,13 +367,23 @@ const StaffQueuePage = () => {
                               )}
 
                               {isCurrent && (
-                                <span className="text-[11px] font-semibold text-slate-500">
-                                  Doctor consultation in progress
-                                </span>
+                                isOrgAdmin ? (
+                                  <button
+                                    onClick={() => handleAdvance(item._id, 'completed')}
+                                    disabled={advancingId === item._id}
+                                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
+                                  >
+                                    Complete
+                                  </button>
+                                ) : (
+                                  <span className="text-[11px] font-semibold text-slate-500">
+                                    Doctor consultation in progress
+                                  </span>
+                                )
                               )}
 
                               {(!isWaiting && !isCurrent) ||
-                                (isWaiting && user?.role !== 'receptionist') ? (
+                                (isWaiting && user?.role !== 'receptionist' && !isOrgAdmin) ? (
                                 <span className="text-[11px] font-semibold text-slate-400">Done</span>
                               ) : null}
                             </div>

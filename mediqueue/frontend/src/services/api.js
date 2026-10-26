@@ -52,13 +52,23 @@ export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
   registerDoctor: (doctorData) => api.post('/auth/doctor/register', doctorData),
+  registerOrganisation: (organisationData) => api.post('/organisations/register', organisationData),
   getMe: () => api.get('/auth/me'),
+};
+
+export const organisationAPI = {
+  getMyOrganisation: () => api.get('/organisations/me'),
+  getMyDoctors: () => api.get('/organisations/me/doctors'),
+  addDoctor: (data) => api.post('/organisations/me/doctors', data),
+  updateDoctorAffiliation: (id, data) => api.patch(`/organisations/me/doctors/${id}`, data),
+  getPending: () => api.get('/organisations/superadmin/pending'),
+  review: (id, decision) => api.patch(`/organisations/superadmin/${id}/${decision}`),
 };
 
 export const doctorAPI = {
   getDoctors: (params) => api.get('/doctors', { params }),
   getDoctorById: (id) => api.get(`/doctors/${id}`),
-  getDoctorSlots: (id, date) => api.get(`/doctors/${id}/slots`, { params: { date } }),
+  getDoctorSlots: (id, date, orgId) => api.get(`/doctors/${id}/slots`, { params: { date, orgId } }),
   getMyProfile: () => api.get('/doctors/me'),
   updateMyProfile: (data) => api.put('/doctors/me', data),
   resubmitApplication: (data) => api.post('/doctors/me/resubmit', data),

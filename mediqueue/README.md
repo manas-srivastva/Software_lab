@@ -14,7 +14,10 @@ MediQueue is a full-stack, responsive healthcare web application designed to eli
 - **Protected Routes:** Automatic redirection and loading skeletons for unauthenticated visitors.
 
 ### 2. Doctor Directory & Conflict-Free Booking
-- **Specialist Directory:** Multi-department filtering (Cardiology, Pediatrics, Dermatology, Neurology, Orthopedics, General Medicine) with search.
+- **Specialist Directory:** Search and filter approved doctors by department, affiliated organisation, city, or address.
+- **Organisation affiliations:** Organisations and doctor affiliations store location and organisation-specific availability, fees, and room details. The public directory includes active organisation affiliations while preserving legacy doctor records.
+- **Tenant administration:** Organisation accounts register for review; a separately provisioned `superadmin` approves them. `orgAdmin` users can manage only their own affiliations, appointments, and queues. Independent doctor registration creates a pending practice and grants the doctor both doctor and org-admin permissions.
+- **Tenant-scoped bookings:** New appointments and queue entries store their organisation ID. Booking and live slot availability use that affiliation's schedule; the patient directory can filter by city or address.
 - **Live Slot Availability:** Queries available vs. booked consultation slots for any selected date in real time.
 - **Concurrency & Double-Booking Protection:** Guaranteed through MongoDB compound unique partial indexes (`{ doctorId: 1, date: 1, time: 1 }` excluding cancelled appointments).
 - **Booking Confirmation & Cancellation:** Interactive confirmation summaries and safe cancellation modals that instantly free up slots for other patients.
@@ -24,23 +27,21 @@ MediQueue is a full-stack, responsive healthcare web application designed to eli
 - **Sequential Token Generation:** Generates unique, strictly sequential queue tokens (`#1, #2, #3...`) partitioned by doctor and date upon check-in.
 - **Duplicate Prevention:** Prevents multiple queue tokens from being issued for the same appointment.
 - **Live Waiting Forecast:** Dynamically calculates patients ahead in line and estimates wait time based on the doctor's average consultation duration.
-- **Role-Based Queue Flow:** Receptionists check in existing appointments and call the next patient; the assigned doctor completes the consultation. Admins and patients cannot advance queue entries.
+- **Role-Based Queue Flow:** Receptionists check in and call patients, doctors complete their assigned consultations, and org admins manage transitions only within their organisation. Patients cannot advance queue entries.
 
 ## 👥 End-to-End Role Workflows
 
 ### Role-permission matrix
 
-| Capability | Guest | Patient | Admin | Doctor | Receptionist |
-|---|---|---|---|---|---|
-| Register / log in | Yes | Yes | Yes | Yes | Yes |
-| Browse doctors and availability | Yes | Yes | Yes | Yes | Yes |
-| Create appointment | No | Yes | No | No | No |
-| Read appointments | No | Own | Authorized clinic-wide | Assigned only | Authorized clinic-wide |
-| Cancel appointment | No | Own eligible booking | Eligible bookings | No | Eligible bookings |
-| Check in / view queue | Public board only | Own check-in and status | Read queue | Assigned queue | Check in existing bookings and manage queue |
-| Complete consultation | No | No | No | Assigned active consultation | No |
-| Manage doctor/patient records and reports | No | No | Yes | Own availability only | No |
-| Manage clinics | No | No | Not implemented | No | No |
+| Capability | Guest | Patient | Admin | Superadmin | Org admin | Doctor | Receptionist |
+|---|---|---|---|---|---|---|---|
+| Register / log in | Yes | Yes | Yes | Provisioned | Yes | Yes | Yes |
+| Browse doctors and availability | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| Create appointment | No | Yes | No | No | No | No | No |
+| Read appointments | No | Own | Platform-wide | Platform-wide | Own organisation | Assigned only | Platform-wide |
+| Cancel appointment | No | Own eligible booking | Eligible bookings | Eligible bookings | Own organisation | No | Eligible bookings |
+| Manage own organisation doctors / queues | No | No | No | No | Yes | Own queue | No |
+| Approve organisations | No | No | No | Yes | No | No | No |
 
 ### Patient
 1. Register or log in, then find a doctor and review available appointment slots.
@@ -69,7 +70,7 @@ MediQueue is a full-stack, responsive healthcare web application designed to eli
 - A patient waiting behind earlier tokens is estimated to wait `(earlier waiting tokens + 1 if a consultation is active ahead) × the doctor's average consultation minutes`. A patient already in consultation has an estimated wait of zero.
 - Queue transitions are `waiting → in-consultation → completed`. Only receptionists can call the earliest waiting token, and only the assigned doctor can complete the active consultation. A second patient cannot be called until the active consultation is completed.
 - A new booking is `confirmed`; check-in changes the appointment to `checked-in`; consultation completion changes it to `completed`. Eligible confirmed or checked-in appointments can be cancelled, but not after completion or while a consultation is active. `cancelled` and `completed` are terminal states. `pending` remains a legacy model value and is not created by the current booking flow.
-- The current backend supports departments, but there is no Clinic model/API or complete admin-facing clinic-management UI. Clinic management therefore remains an implementation gap rather than part of the current workflow.
+- Organisation registration, approval, doctor affiliations, and organisation-scoped appointment/queue operations are available through the API and the organisation dashboards. The legacy admin interface remains platform-wide for backwards compatibility.
 
 ---
 
@@ -94,9 +95,13 @@ mediqueue/
 │   │   └── db.js                 # Database connection (supports MONGODB_URI & zero-config embedded fallback)
 │   ├── controllers/
 │   │   ├── authController.js     # Register, login, profile me
+│   │   ├── organisationController.js # Organisation signup, review, and affiliation management
 │   │   ├── doctorController.js   # Listing, search, filtering, and slot availability
 │   │   ├── appointmentController.js # Booking, conflict validation, list, cancel
 │   │   └── queueController.js    # Check-in, sequential tokens, wait forecast, advance queue
+│   ├── services/
+│   │   ├── doctorService.js      # Organisation-aware doctor directory queries
+│   │   └── organisationService.js # Organisation-specific booking affiliation resolution
 │   ├── middleware/
 │   │   ├── authMiddleware.js     # JWT verification & req.user attachment
 │   │   ├── roleMiddleware.js     # Enforces receptionist/admin authorization
@@ -104,15 +109,19 @@ mediqueue/
 │   ├── models/
 │   │   ├── User.js               # User schema with bcrypt pre-save hook
 │   │   ├── Doctor.js             # Doctor schema with slots and average consultation time
+│   │   ├── Organisation.js       # Organisation details and organisation administrator
+│   │   ├── DoctorAffiliation.js  # Organisation-specific doctor availability and fees
 │   │   ├── Appointment.js        # Appointment schema with compound unique index
 │   │   └── Queue.js              # Queue schema with sequential token index
 │   ├── routes/
 │   │   ├── authRoutes.js
+│   │   ├── organisationRoutes.js
 │   │   ├── doctorRoutes.js
 │   │   ├── appointmentRoutes.js
 │   │   └── queueRoutes.js
 │   ├── tests/
-│   │   └── e2e.test.js           # Complete 15-step automated integration test suite
+│   │   ├── e2e.test.js           # Appointment and queue integration test suite
+│   │   └── tenant_workflow.test.js # Organisation approval and tenant isolation suite
 │   ├── utils/
 │   │   ├── generateToken.js      # JWT signing utility
 │   │   └── seedData.js           # Auto-seeder for doctors and demo accounts
@@ -139,7 +148,7 @@ mediqueue/
 │   │   │   ├── RegisterPage.jsx  # Patient registration form with validation
 │   │   │   ├── LoginPage.jsx     # Login with one-click demo presets
 │   │   │   ├── DashboardPage.jsx # Metrics cards, recent bookings, check-in CTA
-│   │   │   ├── FindDoctorPage.jsx# Doctor cards, search, and department filter
+│   │   │   ├── FindDoctorPage.jsx# Organisation-aware doctor search and location filter
 │   │   │   ├── BookAppointmentPage.jsx # Slot picker, conflict warning, confirmation
 │   │   │   ├── MyAppointmentsPage.jsx  # Appointment history, check-in, cancel modal
 │   │   │   ├── QueueTrackingPage.jsx   # Prominent token screen, wait forecast, staff controls
@@ -196,6 +205,8 @@ JWT_SECRET=<unique-random-secret-at-least-32-characters>
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173
 AVG_CONSULTATION_MINUTES=15
+SUPERADMIN_EMAIL=<platform-superadmin-email>
+SUPERADMIN_PASSWORD=<strong-unique-password>
 ```
 
 Generate a unique secret (do not reuse the old demo secret) with:
@@ -203,6 +214,7 @@ Generate a unique secret (do not reuse the old demo secret) with:
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 The backend refuses to start if `JWT_SECRET` is missing, too short, or equals the exposed legacy demo secret. Replacing that legacy value invalidates existing login tokens; users must sign in again.
+When both superadmin variables are set, startup creates that account if it does not exist; it refuses to promote an existing non-superadmin account. Keep the credentials private and remove them from the runtime environment after provisioning.
 
 **Frontend (`frontend/.env`):**
 ```env

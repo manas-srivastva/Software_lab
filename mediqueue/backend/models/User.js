@@ -36,13 +36,28 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['patient', 'doctor', 'receptionist', 'admin'],
+      enum: ['patient', 'doctor', 'receptionist', 'admin', 'superadmin', 'orgAdmin'],
       default: 'patient',
+    },
+    roles: {
+      type: [
+        {
+          type: String,
+          enum: ['patient', 'doctor', 'receptionist', 'admin', 'superadmin', 'orgAdmin'],
+        },
+      ],
+      default: [],
     },
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Doctor',
       default: null,
+    },
+    orgId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organisation',
+      default: null,
+      index: true,
     },
   },
   {

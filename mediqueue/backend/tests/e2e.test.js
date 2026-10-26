@@ -61,10 +61,23 @@ async function runTests() {
   // Test 3: Fetch Doctors from DB
   const docRes = await request('/doctors');
   console.log('3. Fetch Doctors Count:', docRes.data.count >= 6 ? 'PASS' : 'FAIL', `(${docRes.data.count} doctors loaded)`);
+  const doctorLogin = await request('/auth/login', { method: 'POST' }, {
+    email: 'dr.kim@mediqueue.com',
+    password: 'password123',
+  });
+  const doctorProfile = await request('/doctors/me', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${doctorLogin.data.token}` },
+  });
+  const doctor = docRes.data.doctors.find(
+    (item) => item._id === doctorProfile.data.doctor?._id
+  );
+  if (!doctor) throw new Error('The demo doctor account must have an approved, active directory profile');
   const today = getTodayDate();
   const weekday = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  const doctor = docRes.data.doctors.find((item) => item.availableDays.includes(weekday));
-  if (!doctor) throw new Error(`No doctor is available on ${weekday}; cannot run same-day check-in tests`);
+  if (!doctor.availableDays.includes(weekday)) {
+    throw new Error(`The demo doctor is not available on ${weekday}; cannot run same-day check-in tests`);
+  }
   const availableSlotsResponse = await request(`/doctors/${doctor._id}/slots?date=${today}`);
   const freeSlots = availableSlotsResponse.data.slots.filter((slot) => slot.isAvailable);
   if (freeSlots.length < 2) throw new Error('At least two free slots are required for the E2E workflow');
@@ -185,10 +198,6 @@ async function runTests() {
     `Current Token Served: #${johnStatusAfterAdvance.data.currentTokenBeingServed}, Patients Ahead: ${johnStatusAfterAdvance.data.patientsAhead}, Wait: ${johnStatusAfterAdvance.data.estimatedWaitMinutes} min`
   );
 
-  const doctorLogin = await request('/auth/login', { method: 'POST' }, {
-    email: 'dr.kim@mediqueue.com',
-    password: 'password123',
-  });
   const completedConsultation = await request(
     `/queue/${checkIn1.data.queue._id}/advance`,
     {

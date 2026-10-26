@@ -1,5 +1,8 @@
 const Doctor = require('../models/Doctor');
 const Appointment = require('../models/Appointment');
+const DoctorAffiliation = require('../models/DoctorAffiliation');
+const { listDoctors } = require('../services/doctorService');
+const { resolveDoctorAffiliation } = require('../services/organisationService');
 const {
   getLocalDateString,
   getWeekdayName,
@@ -14,31 +17,7 @@ const publicDoctorFields =
 // @access  Public
 const getDoctors = async (req, res, next) => {
   try {
-    const { search, specialization, department } = req.query;
-    // Strict requirement: Only APPROVED and active doctors appear in patient search
-    const query = { isActive: true, verificationStatus: 'APPROVED' };
-
-    if (search) {
-      const searchRegex = new RegExp(search.trim(), 'i');
-      query.$or = [
-        { name: searchRegex },
-        { specialization: searchRegex },
-        { department: searchRegex },
-        { medicalRegistrationNumber: searchRegex },
-      ];
-    }
-
-    if (specialization && specialization !== 'All') {
-      query.specialization = new RegExp(`^${specialization.trim()}$`, 'i');
-    }
-
-    if (department && department !== 'All') {
-      query.department = new RegExp(`^${department.trim()}$`, 'i');
-    }
-
-    const doctors = await Doctor.find(query)
-      .select(publicDoctorFields)
-      .sort({ name: 1 });
+    const doctors = await listDoctors(req.query);
 
     res.status(200).json({
       success: true,
@@ -111,12 +90,23 @@ const getDoctorSlots = async (req, res, next) => {
       });
     }
 
+    const orgId = typeof req.query.orgId === 'string' ? req.query.orgId : undefined;
+    const resolved = await resolveDoctorAffiliation(doctor, orgId);
+    if (resolved.error) {
+      return res.status(resolved.status).json({ success: false, message: resolved.error });
+    }
+    const { affiliation } = resolved;
+    const availableDays = affiliation.availableDays;
+    const availableSlots = affiliation.availableSlots;
+
     // A doctor must configure availability before slots can be booked
-    if (!doctor.availableDays?.length || !doctor.availableSlots?.length) {
+    if (!availableDays?.length || !availableSlots?.length) {
       return res.status(200).json({
         success: true,
         doctorId: doctor._id,
         doctorName: doctor.name,
+        orgId: affiliation.orgId._id,
+        organisationName: affiliation.orgId.name,
         date,
         doctorAvailable: false,
         slots: [],
@@ -133,8 +123,8 @@ const getDoctorSlots = async (req, res, next) => {
     const bookedTimes = new Set(bookedAppointments.map((appt) => appt.time));
 
     // Map all doctor slots with their availability status
-    const doctorAvailable = isBookableDate(date, doctor.availableDays);
-    const slots = doctor.availableSlots.map((slot) => ({
+    const doctorAvailable = isBookableDate(date, availableDays);
+    const slots = availableSlots.map((slot) => ({
       time: slot,
       isAvailable: doctorAvailable && !bookedTimes.has(slot),
     }));
@@ -143,6 +133,8 @@ const getDoctorSlots = async (req, res, next) => {
       success: true,
       doctorId: doctor._id,
       doctorName: doctor.name,
+      orgId: affiliation.orgId._id,
+      organisationName: affiliation.orgId.name,
       date,
       doctorAvailable,
       slots,
@@ -231,6 +223,12 @@ const updateDoctorProfile = async (req, res, next) => {
     }
 
     await doctor.save();
+    if (req.user.orgId) {
+      await DoctorAffiliation.findOneAndUpdate(
+        { doctorId: doctor._id, orgId: req.user.orgId },
+        { roomNumber: doctor.roomNumber }
+      );
+    }
 
     res.status(200).json({
       success: true,
@@ -409,6 +407,16 @@ const updateDoctorAvailability = async (req, res, next) => {
     if (roomNumber !== undefined) doctor.roomNumber = roomNumber;
 
     await doctor.save();
+    if (req.user.orgId) {
+      await DoctorAffiliation.findOneAndUpdate(
+        { doctorId: doctor._id, orgId: req.user.orgId },
+        {
+          ...(availableDays !== undefined ? { availableDays } : {}),
+          ...(availableSlots !== undefined ? { availableSlots } : {}),
+          ...(roomNumber !== undefined ? { roomNumber } : {}),
+        }
+      );
+    }
 
     res.status(200).json({
       success: true,

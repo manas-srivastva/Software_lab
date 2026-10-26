@@ -76,6 +76,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const registerOrganisation = async (organisationData) => {
+    try {
+      const res = await authAPI.registerOrganisation(organisationData);
+      const { token: receivedToken, user: receivedUser } = res.data;
+      localStorage.setItem('token', receivedToken);
+      localStorage.setItem('user', JSON.stringify(receivedUser));
+      setToken(receivedToken);
+      setUser(receivedUser);
+      success('Organisation submitted for platform approval.');
+      return { success: true, user: receivedUser };
+    } catch (err) {
+      toastError(err.message || 'Organisation registration failed');
+      return { success: false, message: err.message };
+    }
+  };
+
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -89,10 +105,13 @@ export const AuthProvider = ({ children }) => {
     token,
     isAuthenticated: !!user && !!token,
     isPatient: !loading && !!token && user?.role === 'patient',
-    isStaff: user?.role === 'receptionist' || user?.role === 'admin',
+    isStaff:
+      ['receptionist', 'admin', 'superadmin', 'orgAdmin'].includes(user?.role) ||
+      user?.roles?.includes('orgAdmin'),
     loading,
     login,
     register,
+    registerOrganisation,
     logout,
   };
 

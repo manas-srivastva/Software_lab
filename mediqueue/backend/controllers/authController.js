@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const Doctor = require('../models/Doctor');
+const Organisation = require('../models/Organisation');
+const DoctorAffiliation = require('../models/DoctorAffiliation');
 const generateToken = require('../utils/generateToken');
 const { createNotification } = require('./notificationController');
 
@@ -99,6 +101,8 @@ const login = async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        roles: user.roles,
+        orgId: user.orgId || null,
         doctorId: user.doctorId || null,
         createdAt: user.createdAt,
       },
@@ -129,6 +133,8 @@ const getMe = async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        roles: user.roles,
+        orgId: user.orgId || null,
         doctorId: user.doctorId || null,
         createdAt: user.createdAt,
       },
@@ -142,6 +148,9 @@ const getMe = async (req, res, next) => {
 // @route   POST /api/auth/doctor/register
 // @access  Public
 const registerDoctor = async (req, res, next) => {
+  let doctor;
+  let user;
+  let organisation;
   try {
     const {
       name,
@@ -160,6 +169,8 @@ const registerDoctor = async (req, res, next) => {
       availableSlots,
       averageConsultationMinutes,
       verificationDocuments,
+      city,
+      consultationFee,
     } = req.body;
 
     // Validate required fields
@@ -193,6 +204,15 @@ const registerDoctor = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Password must be at least 6 characters long',
+      });
+    }
+    if (
+      consultationFee !== undefined &&
+      (!Number.isFinite(Number(consultationFee)) || Number(consultationFee) < 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Consultation fee must be a non-negative number',
       });
     }
 
@@ -249,7 +269,7 @@ const registerDoctor = async (req, res, next) => {
     const slots = Array.isArray(availableSlots) && availableSlots.length > 0 ? availableSlots : defaultSlots;
 
     // Security: Enforce doctor role, PENDING status, and isActive = false
-    const doctor = await Doctor.create({
+    doctor = await Doctor.create({
       name: name.trim(),
       email: normalizedEmail,
       specialization: specialization.trim(),
@@ -282,17 +302,39 @@ const registerDoctor = async (req, res, next) => {
       ],
     });
 
-    const user = await User.create({
+    user = await User.create({
       name: name.trim(),
       email: normalizedEmail,
       phone: phone.trim(),
       password,
       role: 'doctor', // strictly enforced
+      roles: ['orgAdmin'],
       doctorId: doctor._id,
     });
 
     doctor.userId = user._id;
     await doctor.save();
+
+    organisation = await Organisation.create({
+      type: 'independent_practice',
+      name: clinicHospitalName?.trim() || `${name.trim()} Practice`,
+      address: clinicAddress?.trim() || '',
+      city: typeof city === 'string' ? city.trim() : '',
+      phone: phone.trim(),
+      orgAdmin: user._id,
+      isActive: false,
+      approvalStatus: 'pending',
+    });
+    user.orgId = organisation._id;
+    await user.save();
+    await DoctorAffiliation.create({
+      doctorId: doctor._id,
+      orgId: organisation._id,
+      availableDays: days,
+      availableSlots: slots,
+      consultationFee: consultationFee === undefined ? 0 : Number(consultationFee),
+      roomNumber: doctor.roomNumber,
+    });
 
     // Send in-app notification
     await createNotification({
@@ -316,12 +358,17 @@ const registerDoctor = async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        roles: user.roles,
+        orgId: user.orgId,
         doctorId: doctor._id,
         createdAt: user.createdAt,
       },
       doctor,
     });
   } catch (error) {
+    if (organisation) await Organisation.deleteOne({ _id: organisation._id });
+    if (user) await User.deleteOne({ _id: user._id });
+    if (doctor) await Doctor.deleteOne({ _id: doctor._id });
     next(error);
   }
 };

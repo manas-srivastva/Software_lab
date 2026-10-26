@@ -1,6 +1,7 @@
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const Queue = require('../models/Queue');
+const { resolveDoctorAffiliation } = require('../services/organisationService');
 const { isBookableDate } = require('../utils/appointmentDate');
 
 // @desc    Book a new medical appointment
@@ -8,7 +9,7 @@ const { isBookableDate } = require('../utils/appointmentDate');
 // @access  Private (Patient)
 const createAppointment = async (req, res, next) => {
   try {
-    const { doctorId, date, time, reason } = req.body;
+    const { doctorId, orgId, date, time, reason } = req.body;
 
     // Validation
     if (
@@ -50,15 +51,22 @@ const createAppointment = async (req, res, next) => {
       });
     }
 
+    const resolved = await resolveDoctorAffiliation(doctor, orgId);
+    if (resolved.error) {
+      return res.status(resolved.status).json({ success: false, message: resolved.error });
+    }
+    const { affiliation } = resolved;
+    const selectedOrgId = affiliation.orgId._id || affiliation.orgId;
+
     // A doctor must configure availability before slots can be booked
-    if (!doctor.availableDays?.length || !doctor.availableSlots?.length) {
+    if (!affiliation.availableDays?.length || !affiliation.availableSlots?.length) {
       return res.status(400).json({
         success: false,
         message: 'Doctor has not configured consultation availability yet',
       });
     }
 
-    if (!isBookableDate(date, doctor.availableDays)) {
+    if (!isBookableDate(date, affiliation.availableDays)) {
       return res.status(400).json({
         success: false,
         message: 'Please select a valid future date when this doctor is available',
@@ -66,7 +74,7 @@ const createAppointment = async (req, res, next) => {
     }
 
     // Verify requested time is in doctor's available slots
-    if (!doctor.availableSlots.includes(time)) {
+    if (!affiliation.availableSlots.includes(time)) {
       return res.status(400).json({
         success: false,
         message: `Requested time slot '${time}' is not offered by Dr. ${doctor.name}`,
@@ -92,6 +100,7 @@ const createAppointment = async (req, res, next) => {
     const appointment = await Appointment.create({
       patientId: req.user._id,
       doctorId,
+      orgId: selectedOrgId,
       date,
       time,
       reason: reason.trim(),
@@ -100,6 +109,7 @@ const createAppointment = async (req, res, next) => {
 
     const populatedAppointment = await Appointment.findById(appointment._id)
       .populate('doctorId', 'name specialization department roomNumber averageConsultationMinutes')
+      .populate('orgId', 'name city address')
       .populate('patientId', 'name email phone');
 
     res.status(201).json({
@@ -126,6 +136,7 @@ const getMyAppointments = async (req, res, next) => {
   try {
     const appointments = await Appointment.find({ patientId: req.user._id })
       .populate('doctorId', 'name specialization department roomNumber averageConsultationMinutes')
+      .populate('orgId', 'name city address')
       .sort({ date: -1, time: -1 });
 
     // Also fetch associated queue tokens for these appointments if any
@@ -159,6 +170,7 @@ const getAppointmentById = async (req, res, next) => {
   try {
     const appointment = await Appointment.findById(req.params.id)
       .populate('doctorId', 'name specialization department roomNumber averageConsultationMinutes')
+      .populate('orgId', 'name city address')
       .populate('patientId', 'name email phone');
 
     if (!appointment) {
@@ -170,13 +182,15 @@ const getAppointmentById = async (req, res, next) => {
 
     // Verify ownership or staff permissions
     const isOwner = appointment.patientId._id.toString() === req.user._id.toString();
-    const isStaff = ['receptionist', 'admin'].includes(req.user.role);
+    const isStaff = ['receptionist', 'admin', 'superadmin'].includes(req.user.role);
+    const isOrgAdmin = req.user.role === 'orgAdmin' || req.user.roles?.includes('orgAdmin');
     const doctor = req.user.role === 'doctor'
       ? await Doctor.findOne({ userId: req.user._id }).select('_id')
       : null;
     const isAssignedDoctor = doctor && doctor._id.equals(appointment.doctorId._id);
 
-    if (!isOwner && !isStaff && !isAssignedDoctor) {
+    const isInOrg = isOrgAdmin && appointment.orgId?.toString() === req.user.orgId?.toString();
+    if (!isOwner && !isStaff && !isAssignedDoctor && !isInOrg) {
       return res.status(403).json({
         success: false,
         message: 'Forbidden: You are not authorized to view this appointment',
@@ -212,9 +226,11 @@ const cancelAppointment = async (req, res, next) => {
 
     // Verify ownership or staff role
     const isOwner = appointment.patientId.toString() === req.user._id.toString();
-    const isStaff = ['receptionist', 'admin'].includes(req.user.role);
+    const isStaff = ['receptionist', 'admin', 'superadmin'].includes(req.user.role);
+    const isOrgAdmin = req.user.role === 'orgAdmin' || req.user.roles?.includes('orgAdmin');
 
-    if (!isOwner && !isStaff) {
+    const isInOrg = isOrgAdmin && appointment.orgId?.toString() === req.user.orgId?.toString();
+    if (!isOwner && !isStaff && !isInOrg) {
       return res.status(403).json({
         success: false,
         message: 'Forbidden: You cannot cancel another patient’s appointment',
@@ -284,6 +300,7 @@ const cancelAppointment = async (req, res, next) => {
 
     const updatedAppointment = await Appointment.findById(appointment._id)
       .populate('doctorId', 'name specialization department roomNumber averageConsultationMinutes')
+      .populate('orgId', 'name city address')
       .populate('patientId', 'name email phone');
 
     res.status(200).json({
@@ -304,12 +321,18 @@ const getAllAppointments = async (req, res, next) => {
     const { date, doctorId, status } = req.query;
     const query = {};
 
+    if (req.user.role === 'orgAdmin' || req.user.roles?.includes('orgAdmin')) {
+      query.orgId = req.user.orgId;
+    } else if (req.query.orgId) {
+      query.orgId = req.query.orgId;
+    }
     if (date) query.date = date;
     if (doctorId) query.doctorId = doctorId;
     if (status) query.status = status;
 
     const appointments = await Appointment.find(query)
       .populate('doctorId', 'name specialization department roomNumber averageConsultationMinutes')
+      .populate('orgId', 'name city address')
       .populate('patientId', 'name email phone')
       .sort({ date: -1, time: 1 });
 
@@ -340,6 +363,9 @@ const getDoctorAppointments = async (req, res, next) => {
 
     const { date, status } = req.query;
     const query = { doctorId };
+    if (req.user.role === 'orgAdmin' || req.user.roles?.includes('orgAdmin')) {
+      query.orgId = req.user.orgId;
+    }
     if (date) query.date = date;
     if (status) query.status = status;
 

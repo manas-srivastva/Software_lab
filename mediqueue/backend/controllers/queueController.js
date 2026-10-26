@@ -1,6 +1,8 @@
 const Queue = require('../models/Queue');
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
+const DoctorAffiliation = require('../models/DoctorAffiliation');
+const Organisation = require('../models/Organisation');
 const { getLocalDateString } = require('../utils/appointmentDate');
 
 // Helper to get today's date formatted as YYYY-MM-DD in local time
@@ -24,7 +26,16 @@ const checkInAppointment = async (req, res, next) => {
 
     // Verify ownership or staff permissions
     const isOwner = appointment.patientId._id.toString() === req.user._id.toString();
-    const isStaff = req.user.role === 'receptionist';
+    const isStaff = req.user.role === 'receptionist' ||
+      req.user.role === 'orgAdmin' ||
+      req.user.roles?.includes('orgAdmin');
+    const isOrgAdmin = req.user.role === 'orgAdmin' || req.user.roles?.includes('orgAdmin');
+    if (isOrgAdmin && appointment.orgId?.toString() !== req.user.orgId?.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Appointment is outside your organisation',
+      });
+    }
 
     if (!isOwner && !isStaff) {
       return res.status(403).json({
@@ -97,6 +108,7 @@ const checkInAppointment = async (req, res, next) => {
         appointmentId: appointment._id,
         patientId: appointment.patientId._id,
         doctorId: appointment.doctorId._id,
+        orgId: appointment.orgId,
         date: appointment.date,
         tokenNumber: nextTokenNumber,
         status: 'waiting',
@@ -121,6 +133,7 @@ const checkInAppointment = async (req, res, next) => {
     const populatedQueue = await Queue.findById(newQueueEntry._id)
       .populate('doctorId', 'name specialization department roomNumber averageConsultationMinutes')
       .populate('patientId', 'name email phone')
+      .populate('orgId', 'name city')
       .populate('appointmentId');
 
     res.status(201).json({
@@ -183,6 +196,7 @@ const getMyQueueStatus = async (req, res, next) => {
     // Look for doctor's in-consultation patient
     const inConsultationEntry = await Queue.findOne({
       doctorId,
+      orgId: userQueue.orgId,
       date,
       status: 'in-consultation',
     });
@@ -194,6 +208,7 @@ const getMyQueueStatus = async (req, res, next) => {
       // If none currently in-consultation, look for highest completed token
       const lastCompleted = await Queue.findOne({
         doctorId,
+        orgId: userQueue.orgId,
         date,
         status: 'completed',
       }).sort({ tokenNumber: -1 });
@@ -210,6 +225,7 @@ const getMyQueueStatus = async (req, res, next) => {
     if (userQueue.status === 'waiting') {
       patientsAhead = await Queue.countDocuments({
         doctorId,
+        orgId: userQueue.orgId,
         date,
         status: 'waiting',
         tokenNumber: { $lt: userQueue.tokenNumber },
@@ -253,6 +269,9 @@ const getDoctorQueue = async (req, res, next) => {
   try {
     const { doctorId } = req.params;
     const date = req.query.date || getLocalDateString();
+    let orgId = typeof req.query.orgId === 'string' ? req.query.orgId : null;
+    const isOrgAdmin = req.user?.role === 'orgAdmin' || req.user?.roles?.includes('orgAdmin');
+    if (isOrgAdmin) orgId = req.user.orgId?.toString() || null;
 
     const doctor = await Doctor.findById(doctorId);
     if (!doctor) {
@@ -262,7 +281,30 @@ const getDoctorQueue = async (req, res, next) => {
       });
     }
 
-    const queueEntries = await Queue.find({ doctorId, date })
+    if (orgId && !(await DoctorAffiliation.exists({ doctorId, orgId }))) {
+      return res.status(403).json({
+        success: false,
+        message: 'Doctor is not affiliated with this organisation',
+      });
+    }
+    if (orgId && !isOrgAdmin) {
+      const activeOrganisation = await Organisation.exists({
+        _id: orgId,
+        isActive: true,
+        approvalStatus: 'approved',
+      });
+      if (!activeOrganisation) {
+        return res.status(404).json({ success: false, message: 'Organisation not found or not active' });
+      }
+    }
+    if (!orgId) {
+      const affiliation = await DoctorAffiliation.findOne({ doctorId })
+        .populate({ path: 'orgId', match: { isActive: true, approvalStatus: 'approved' } })
+        .sort({ createdAt: 1 });
+      orgId = affiliation?.orgId?._id?.toString() || null;
+    }
+
+    const queueEntries = await Queue.find({ doctorId, date, orgId })
       .populate('patientId', 'name phone')
       .populate('appointmentId', 'time reason')
       .sort({ tokenNumber: 1 });
@@ -273,7 +315,9 @@ const getDoctorQueue = async (req, res, next) => {
     const completedList = queueEntries.filter((q) => q.status === 'completed');
 
     // Role-based privacy filtering: Staff sees full clinical details; Public/other patients see privacy-masked tokens
-    const isStaff = req.user && ['receptionist', 'admin'].includes(req.user.role);
+    const isStaff = req.user &&
+      (['receptionist', 'admin', 'superadmin', 'orgAdmin'].includes(req.user.role) ||
+        req.user.roles?.includes('orgAdmin'));
     const isAssignedDoctor =
       req.user?.role === 'doctor' &&
       (await Doctor.exists({ _id: doctorId, userId: req.user._id }));
@@ -281,7 +325,11 @@ const getDoctorQueue = async (req, res, next) => {
 
     const sanitizedEntries = queueEntries.map((entry) => {
       const isSelf = requestingUserId && entry.patientId?._id?.toString() === requestingUserId;
-      if (isStaff || isAssignedDoctor || isSelf) {
+      if (
+        (isStaff && (!isOrgAdmin || entry.orgId?.toString() === req.user.orgId?.toString())) ||
+        isAssignedDoctor ||
+        isSelf
+      ) {
         return entry;
       }
 
@@ -348,6 +396,13 @@ const advanceQueue = async (req, res, next) => {
 
     const doctorId = queueEntry.doctorId._id;
     const date = queueEntry.date;
+    const isOrgAdmin = req.user.role === 'orgAdmin' || req.user.roles?.includes('orgAdmin');
+    if (isOrgAdmin && queueEntry.orgId?.toString() !== req.user.orgId?.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Queue entry is outside your organisation',
+      });
+    }
 
     const requestedStatus =
       targetStatus ||
@@ -368,14 +423,14 @@ const advanceQueue = async (req, res, next) => {
       });
     }
 
-    if (req.user.role === 'receptionist' && requestedStatus !== 'in-consultation') {
+    if (!isOrgAdmin && req.user.role === 'receptionist' && requestedStatus !== 'in-consultation') {
       return res.status(403).json({
         success: false,
         message: 'Receptionists can call waiting patients; doctors complete consultations',
       });
     }
 
-    if (req.user.role === 'doctor' && requestedStatus !== 'completed') {
+    if (!isOrgAdmin && req.user.role === 'doctor' && requestedStatus !== 'completed') {
       return res.status(403).json({
         success: false,
         message: 'Doctors can complete consultations; receptionists call waiting patients',
@@ -395,6 +450,7 @@ const advanceQueue = async (req, res, next) => {
     if (requestedStatus === 'in-consultation') {
       const activeConsultation = await Queue.findOne({
         doctorId,
+        orgId: queueEntry.orgId,
         date,
         status: 'in-consultation',
       });
@@ -407,6 +463,7 @@ const advanceQueue = async (req, res, next) => {
 
       const nextWaitingEntry = await Queue.findOne({
         doctorId,
+        orgId: queueEntry.orgId,
         date,
         status: 'waiting',
       }).sort({ tokenNumber: 1 });
@@ -418,7 +475,7 @@ const advanceQueue = async (req, res, next) => {
       }
 
       const appointmentTransition = await Appointment.findOneAndUpdate(
-        { _id: queueEntry.appointmentId, status: 'checked-in' },
+        { _id: queueEntry.appointmentId, orgId: queueEntry.orgId, status: 'checked-in' },
         { status: 'in-consultation' }
       );
       if (!appointmentTransition) {
@@ -432,7 +489,7 @@ const advanceQueue = async (req, res, next) => {
       queueEntry.calledAt = new Date();
     } else {
       const appointmentTransition = await Appointment.findOneAndUpdate(
-        { _id: queueEntry.appointmentId, status: 'in-consultation' },
+        { _id: queueEntry.appointmentId, orgId: queueEntry.orgId, status: 'in-consultation' },
         { status: 'completed' }
       );
       if (!appointmentTransition) {

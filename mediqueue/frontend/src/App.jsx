@@ -19,6 +19,9 @@ import StaffQueuePage from './pages/StaffQueuePage';
 import DoctorDashboardPage from './pages/DoctorDashboardPage';
 import DoctorRegisterPage from './pages/DoctorRegisterPage';
 import AdminDoctorManagementPage from './pages/AdminDoctorManagementPage';
+import OrganisationRegisterPage from './pages/OrganisationRegisterPage';
+import OrganisationDashboardPage from './pages/OrganisationDashboardPage';
+import SuperAdminOrganisationPage from './pages/SuperAdminOrganisationPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -32,6 +35,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/register-organisation" element={<OrganisationRegisterPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/doctors" element={<FindDoctorPage />} />
                 <Route
@@ -82,7 +86,7 @@ function App() {
                 <Route
                   path="/staff/queue"
                   element={
-                    <ProtectedRoute allowedRoles={['receptionist', 'admin']}>
+                    <ProtectedRoute allowedRoles={['receptionist', 'admin', 'superadmin', 'orgAdmin']}>
                       <StaffQueuePage />
                     </ProtectedRoute>
                   }
@@ -95,8 +99,24 @@ function App() {
                 <Route
                   path="/admin/doctors"
                   element={
-                    <ProtectedRoute allowedRoles={['admin']}>
+                    <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
                       <AdminDoctorManagementPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/org/dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={['orgAdmin']}>
+                      <OrganisationDashboardPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/organisations"
+                  element={
+                    <ProtectedRoute allowedRoles={['superadmin']}>
+                      <SuperAdminOrganisationPage />
                     </ProtectedRoute>
                   }
                 />
