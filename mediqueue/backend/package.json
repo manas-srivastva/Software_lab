@@ -1,0 +1,39 @@
+{
+  "name": "mediqueue-backend",
+  "version": "1.0.0",
+  "description": "MediQueue - Smart Medical Appointment & Queue Management System Backend API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "seed": "node utils/seedData.js",
+    "test:e2e": "node tests/e2e.test.js",
+    "test:security": "node tests/security.test.js",
+    "test:workflows": "node tests/four_actors.test.js",
+    "test:auth-config": "node tests/jwtSecret.test.js",
+    "test:dates": "node tests/appointmentDate.test.js",
+    "test:onboarding": "node tests/doctor_onboarding.test.js"
+  },
+  "keywords": [
+    "mediqueue",
+    "appointment",
+    "queue-management",
+    "express",
+    "mongodb",
+    "jwt",
+    "healthcare"
+  ],
+  "author": "MediQueue Team",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

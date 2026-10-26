@@ -1,0 +1,32 @@
+const express = require('express');
+const router = express.Router();
+const {
+  checkInAppointment,
+  getMyQueueStatus,
+  getDoctorQueue,
+  advanceQueue,
+} = require('../controllers/queueController');
+const { protect, optionalAuth } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
+
+// Privacy-aware live doctor queue display board: masks sensitive info for public/patients, full for staff
+router.get('/doctor/:doctorId', optionalAuth, getDoctorQueue);
+
+// Protected routes for patients / checked-in users
+router.post(
+  '/check-in/:appointmentId',
+  protect,
+  authorizeRoles('patient', 'receptionist'),
+  checkInAppointment
+);
+router.get('/my-status', protect, authorizeRoles('patient'), getMyQueueStatus);
+
+// Receptionists call the next patient; assigned doctors complete consultations.
+router.patch(
+  '/:id/advance',
+  protect,
+  authorizeRoles('doctor', 'receptionist'),
+  advanceQueue
+);
+
+module.exports = router;

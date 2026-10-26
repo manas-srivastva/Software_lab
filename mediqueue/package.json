@@ -1,0 +1,17 @@
+{
+  "name": "mediqueue-project",
+  "version": "1.0.0",
+  "description": "MediQueue — Smart Medical Appointment & Queue Management System",
+  "scripts": {
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run dev",
+    "seed": "cd backend && npm run seed",
+    "test": "cd backend && npm run test:e2e",
+    "test:security": "cd backend && npm run test:security",
+    "test:workflows": "cd backend && npm run test:workflows",
+    "test:auth-config": "cd backend && npm run test:auth-config",
+    "test:dates": "cd backend && npm run test:dates"
+  },
+  "author": "MediQueue Team",
+  "license": "ISC"
+}
