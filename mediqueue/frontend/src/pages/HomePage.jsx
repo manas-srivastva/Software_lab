@@ -129,25 +129,21 @@ const HomePage = () => {
                   summary: qRes.data.summary,
                 });
               }
-            } catch (e) {
-              // ignore
+            } catch (error) {
+              console.warn('Could not load reception queue summary:', error.message);
             }
           }
-        } else if (userRole === 'admin' || userRole === 'superadmin' || userRole === 'orgAdmin') {
-          // Admin: Fetch reports and pending doctor applications
-          const promises = [adminAPI.getDoctors({ status: 'PENDING' })];
-          // getReports is only for admin/superadmin, not orgAdmin
-          if (userRole === 'admin' || userRole === 'superadmin') {
-            promises.unshift(adminAPI.getReports());
-          }
-          const results = await Promise.allSettled(promises);
-          const reportsRes = (userRole === 'admin' || userRole === 'superadmin') ? results[0] : null;
-          const pendingDocsRes = (userRole === 'admin' || userRole === 'superadmin') ? results[1] : results[0];
+        } else if (userRole === 'admin' || userRole === 'superadmin') {
+          // Platform administrators can review doctors and access platform reports.
+          const [reportsRes, pendingDocsRes] = await Promise.allSettled([
+            adminAPI.getReports(),
+            adminAPI.getDoctors({ status: 'PENDING' }),
+          ]);
 
-          if (isMounted && reportsRes && reportsRes.status === 'fulfilled') {
+          if (isMounted && reportsRes.status === 'fulfilled') {
             setAdminStats(reportsRes.value.data.summary || reportsRes.value.data);
           }
-          if (isMounted && pendingDocsRes && pendingDocsRes.status === 'fulfilled') {
+          if (isMounted && pendingDocsRes.status === 'fulfilled') {
             setPendingDoctors(pendingDocsRes.value.data.doctors || []);
           }
         }
@@ -683,7 +679,7 @@ const HomePage = () => {
           </div>
 
           {/* Receptionist OPD Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
             <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-3">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <span>Today's Total Bookings</span>
@@ -714,6 +710,74 @@ const HomePage = () => {
               </p>
               <p className="text-xs text-slate-500">Confirmed appointments pending check-in confirmation</p>
             </div>
+
+            <div className="bg-gradient-to-br from-white to-indigo-50/70 rounded-3xl p-6 border border-indigo-100 shadow-sm space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <span>Live Queue Snapshot</span>
+                <Activity className="w-4 h-4 text-indigo-600" />
+              </div>
+              {receptionQueueSummary ? (
+                <>
+                  <p className="text-3xl font-black text-indigo-700">
+                    {receptionQueueSummary.summary?.waitingCount || 0}
+                  </p>
+                  <p className="text-xs text-slate-600">
+                    Waiting with {receptionQueueSummary.doctor?.name || 'today’s selected doctor'}
+                  </p>
+                </>
+              ) : (
+                <p className="min-h-[3.25rem] text-xs leading-relaxed text-slate-500">
+                  Queue summary is not available right now. Open the queue desk to refresh live activity.
+                </p>
+              )}
+              <Link
+                to="/staff/queue"
+                className="inline-flex items-center gap-1 text-xs font-bold text-indigo-700 hover:text-indigo-900"
+              >
+                Manage queue <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isAuthenticated && userRole === 'orgAdmin' && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <div className="relative overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-white via-white to-indigo-50 p-6 shadow-sm sm:p-8">
+            <div className="absolute -right-12 -top-20 h-56 w-56 rounded-full bg-indigo-100/70 blur-3xl" />
+            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl space-y-3">
+                <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-indigo-700">
+                  <Building2 className="h-3.5 w-3.5" />
+                  Organisation workspace
+                </span>
+                <div>
+                  <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                    Welcome, {user?.name}
+                  </h1>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    Manage your organisation’s doctors, appointments, and patient queue from your dedicated workspace.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link
+                  to="/org/dashboard"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-indigo-700/20 transition hover:-translate-y-0.5 hover:bg-indigo-700"
+                >
+                  <Building2 className="h-4 w-4" />
+                  Organisation dashboard
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to="/staff/queue"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                >
+                  <Activity className="h-4 w-4 text-indigo-600" />
+                  Open queue desk
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
       )}
@@ -721,7 +785,7 @@ const HomePage = () => {
       {/* ============================================================== */}
       {/* 5. ADMIN ROLE HOMEPAGE                                         */}
       {/* ============================================================== */}
-      {isAuthenticated && (userRole === 'admin' || userRole === 'superadmin' || userRole === 'orgAdmin') && (
+      {isAuthenticated && (userRole === 'admin' || userRole === 'superadmin') && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-8">
           {/* Admin Header Banner */}
           <div className="relative overflow-hidden bg-gradient-to-br from-white via-white to-teal-50/90 p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -784,12 +848,17 @@ const HomePage = () => {
 
             <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-3">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <span>System Administration</span>
+                <span>Appointments Today</span>
                 <BarChart3 className="w-4 h-4 text-sky-600" />
               </div>
-              <p className="text-sm font-bold text-slate-800">Hospital Platform Healthy</p>
+              <p className="text-3xl font-black text-slate-900">
+                {adminStats?.stats?.todayAppointments ?? '—'}
+              </p>
+              <p className="text-xs text-slate-500">
+                {adminStats?.stats?.activeQueueCount ?? '—'} patients currently in active queues
+              </p>
               <Link to="/admin/doctors" className="text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1">
-                View platform management <ChevronRight className="w-3.5 h-3.5" />
+                View doctor management <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
@@ -821,7 +890,50 @@ const HomePage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featuredDoctors.slice(0, 3).map((doc) => (
+          {loading &&
+            [0, 1, 2].map((item) => (
+              <div
+                key={item}
+                aria-hidden="true"
+                className="animate-pulse rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-2xl bg-slate-100" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-2/3 rounded bg-slate-100" />
+                    <div className="h-3 w-1/2 rounded bg-slate-100" />
+                  </div>
+                </div>
+                <div className="mt-6 space-y-3">
+                  <div className="h-3 w-full rounded bg-slate-100" />
+                  <div className="h-3 w-5/6 rounded bg-slate-100" />
+                  <div className="h-3 w-4/6 rounded bg-slate-100" />
+                </div>
+                <div className="mt-6 h-10 rounded-xl bg-slate-100" />
+              </div>
+            ))}
+
+          {!loading && featuredDoctors.length === 0 && (
+            <div className="md:col-span-3 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+              <Stethoscope className="mx-auto h-10 w-10 text-slate-300" />
+              <h3 className="mt-3 text-base font-bold text-slate-800">
+                No specialists are listed yet
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Browse the directory again later to see approved care providers.
+              </p>
+              <Link
+                to="/doctors"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-teal-50 px-4 py-2.5 text-sm font-bold text-teal-700 transition hover:bg-teal-100"
+              >
+                Open doctor directory
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          )}
+
+          {!loading &&
+            featuredDoctors.slice(0, 3).map((doc) => (
             <div
               key={doc._id}
               className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-md hover:border-teal-200 transition-all flex flex-col justify-between space-y-5"

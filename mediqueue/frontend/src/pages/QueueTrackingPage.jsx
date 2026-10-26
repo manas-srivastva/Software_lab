@@ -24,7 +24,9 @@ import {
 
 const QueueTrackingPage = () => {
   const { user, isStaff, isAuthenticated, isPatient } = useAuth();
-  const canCallNext = user?.role === 'receptionist';
+  const canCallNext =
+    ['receptionist', 'orgAdmin'].includes(user?.role) ||
+    user?.roles?.includes('orgAdmin');
   const canCompleteConsultation = user?.role === 'doctor';
   const isDoctor = canCompleteConsultation;
   const { success, error: toastError } = useToast();
@@ -118,8 +120,9 @@ const QueueTrackingPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
       {/* Page Header */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
+      <div className="relative overflow-hidden bg-gradient-to-br from-white via-white to-teal-50/80 p-6 sm:p-8 rounded-3xl border border-teal-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="absolute -right-10 -top-20 h-56 w-56 rounded-full bg-teal-100/60 blur-3xl pointer-events-none" />
+        <div className="relative">
           <div className="flex items-center gap-2">
             <span className="text-xs uppercase tracking-wider font-bold text-teal-800 bg-teal-50 px-3 py-1 rounded-full border border-teal-200/80">
               Live Patient Queue Monitor
@@ -132,10 +135,10 @@ const QueueTrackingPage = () => {
               Live Sync
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-2">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-3">
             Real-Time Token Tracking
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
             Monitor your position in line, estimated wait times, and hospital OPD room progression.
           </p>
         </div>
@@ -147,7 +150,7 @@ const QueueTrackingPage = () => {
             if (selectedDoctorId) fetchDoctorQueue(selectedDoctorId);
           }}
           disabled={refreshing}
-          className="px-5 py-2.5 rounded-2xl border border-slate-200 text-slate-700 hover:text-teal-700 hover:bg-slate-50 font-bold text-xs transition-all flex items-center gap-2 shadow-sm shrink-0"
+          className="relative px-5 py-3 rounded-xl border border-slate-200 bg-white/90 text-slate-700 hover:text-teal-700 hover:bg-white hover:border-teal-200 font-bold text-xs transition-all flex items-center gap-2 shadow-sm shrink-0 disabled:opacity-60"
         >
           <RefreshCw className={`w-4 h-4 text-teal-600 ${refreshing ? 'animate-spin' : ''}`} />
           {refreshing ? 'Refreshing Status...' : 'Refresh Live Status'}
@@ -542,7 +545,7 @@ const QueueTrackingPage = () => {
             <ShieldAlert className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold text-slate-800">Testing Staff Queue Controls?</span>{' '}
-              Queue advancement is strictly role-protected on the backend: receptionists call the next patient, and assigned doctors complete consultations. To test queue controls, sign in with staff credentials:{' '}
+              Queue advancement is strictly role-protected on the backend: receptionists and organisation admins call the next patient, while assigned doctors complete consultations. To test queue controls, sign in with staff credentials:{' '}
               <span className="font-bold text-purple-700">receptionist@mediqueue.com</span> (Password:{' '}
               <span className="font-bold">password123</span>).
             </div>
