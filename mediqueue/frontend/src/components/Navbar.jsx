@@ -17,9 +17,14 @@ import {
 } from 'lucide-react';
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout, isPatient, isStaff } = useAuth();
+  const { user, isAuthenticated, logout, isPatient } = useAuth();
   const isAdmin = ['admin', 'superadmin'].includes(user?.role);
   const isOrgAdmin = user?.role === 'orgAdmin' || user?.roles?.includes('orgAdmin');
+  const isDoctor = user?.role === 'doctor';
+  const isReceptionist = user?.role === 'receptionist';
+  const canUseStaffDesk =
+    ['receptionist', 'admin', 'orgAdmin'].includes(user?.role) ||
+    user?.roles?.includes('orgAdmin');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -70,71 +75,68 @@ const Navbar = () => {
             <NavLink to="/" className={navLinkClass}>
               Home
             </NavLink>
-            <NavLink to="/doctors" className={navLinkClass}>
-              <Stethoscope className="w-4 h-4" />
-              Find Doctors
-            </NavLink>
+            {(!isAuthenticated || isPatient) && (
+              <>
+                <NavLink to="/doctors" className={navLinkClass}>
+                  <Stethoscope className="w-4 h-4" />
+                  Find Doctors
+                </NavLink>
+                <NavLink to="/queue" className={navLinkClass}>
+                  <Clock className="w-4 h-4" />
+                  Track Queue
+                </NavLink>
+              </>
+            )}
             {isPatient && (
-              <NavLink to="/book-appointment" className={navLinkClass}>
-                <Calendar className="w-4 h-4" />
-                Book Appointment
+              <>
+                <NavLink to="/book-appointment" className={navLinkClass}>
+                  <Calendar className="w-4 h-4" />
+                  Book Appointment
+                </NavLink>
+                <NavLink to="/appointments" className={navLinkClass}>
+                  My Appointments
+                </NavLink>
+                <NavLink to="/dashboard" className={navLinkClass}>
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </NavLink>
+              </>
+            )}
+            {isDoctor && (
+              <NavLink to="/doctor/dashboard" className={navLinkClass}>
+                <LayoutDashboard className="w-4 h-4" />
+                Doctor Desk
               </NavLink>
             )}
-            <NavLink to="/queue" className={navLinkClass}>
-              <Clock className="w-4 h-4" />
-              Track Queue
-            </NavLink>
-            {isAuthenticated && (
-              <>
-                {isPatient && (
-                  <NavLink to="/appointments" className={navLinkClass}>
-                    My Appointments
-                  </NavLink>
-                )}
-                {(isPatient || user?.role === 'doctor') && (
-                  isPatient ? (
-                  <NavLink to="/dashboard" className={navLinkClass}>
-                    <LayoutDashboard className="w-4 h-4" />
-                    Dashboard
-                  </NavLink>
-                  ) : (
-                    <NavLink to="/doctor/dashboard" className={navLinkClass}>
-                      <LayoutDashboard className="w-4 h-4" />
-                      Doctor Desk
-                    </NavLink>
-                  )
-                )}
-                {isStaff && (
-                  <NavLink
-                    to="/staff/queue"
-                    className="text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-purple-200 transition"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-purple-600" />
-                    Staff Desk
-                  </NavLink>
-                )}
-                {isAdmin && (
-                  <NavLink
-                    to="/admin/doctors"
-                    className="text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-indigo-200 transition"
-                  >
-                    <ShieldAlert className="w-4 h-4 text-indigo-600" />
-                    Manage Doctors
-                  </NavLink>
-                )}
-                {isOrgAdmin && (
-                  <NavLink to="/org/dashboard" className={navLinkClass}>
-                    <Building2 className="w-4 h-4" />
-                    Organisation
-                  </NavLink>
-                )}
-                {user?.role === 'superadmin' && (
-                  <NavLink to="/admin/organisations" className={navLinkClass}>
-                    <ShieldCheck className="w-4 h-4" />
-                    Approve Organisations
-                  </NavLink>
-                )}
-              </>
+            {canUseStaffDesk && (
+              <NavLink
+                to="/staff/queue"
+                className="text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-purple-200 transition"
+              >
+                <ShieldCheck className="w-4 h-4 text-purple-600" />
+                Staff Desk
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink
+                to="/admin/doctors"
+                className="text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-indigo-200 transition"
+              >
+                <ShieldAlert className="w-4 h-4 text-indigo-600" />
+                Manage Doctors
+              </NavLink>
+            )}
+            {isOrgAdmin && (
+              <NavLink to="/org/dashboard" className={navLinkClass}>
+                <Building2 className="w-4 h-4" />
+                Organisation
+              </NavLink>
+            )}
+            {user?.role === 'superadmin' && (
+              <NavLink to="/admin/organisations" className={navLinkClass}>
+                <ShieldCheck className="w-4 h-4" />
+                Approve Organisations
+              </NavLink>
             )}
           </nav>
 
@@ -154,7 +156,7 @@ const Navbar = () => {
                       {user?.role}
                     </span>
                   </div>
-                  {isStaff && (
+                  {isReceptionist && (
                     <span className="ml-1 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-bold">
                       <ShieldAlert className="w-3 h-3" /> Staff
                     </span>
@@ -232,63 +234,60 @@ const Navbar = () => {
           <NavLink to="/" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
             Home
           </NavLink>
-          <NavLink
-            to="/doctors"
-            onClick={() => setMobileMenuOpen(false)}
-            className={mobileNavLinkClass}
-          >
-            <Stethoscope className="w-4 h-4 text-teal-600" />
-            Find Doctors
-          </NavLink>
-          {isPatient && (
-            <NavLink to="/book-appointment" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
-              <Calendar className="w-4 h-4 text-teal-600" />
-              Book Appointment
+          {(!isAuthenticated || isPatient) && (
+            <NavLink
+              to="/doctors"
+              onClick={() => setMobileMenuOpen(false)}
+              className={mobileNavLinkClass}
+            >
+              <Stethoscope className="w-4 h-4 text-teal-600" />
+              Find Doctors
             </NavLink>
           )}
-          <NavLink
-            to="/queue"
-            onClick={() => setMobileMenuOpen(false)}
-            className={mobileNavLinkClass}
-          >
-            <Clock className="w-4 h-4 text-teal-600" />
-            Track Queue
-          </NavLink>
+          {isPatient && (
+            <>
+              <NavLink to="/book-appointment" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
+                <Calendar className="w-4 h-4 text-teal-600" />
+                Book Appointment
+              </NavLink>
+              <NavLink
+                to="/appointments"
+                onClick={() => setMobileMenuOpen(false)}
+                className={mobileNavLinkClass}
+              >
+                <Calendar className="w-4 h-4 text-teal-600" />
+                My Appointments
+              </NavLink>
+              <NavLink to="/dashboard" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
+                <LayoutDashboard className="w-4 h-4 text-teal-600" />
+                Patient Dashboard
+              </NavLink>
+            </>
+          )}
+          {(!isAuthenticated || isPatient) && (
+            <NavLink
+              to="/queue"
+              onClick={() => setMobileMenuOpen(false)}
+              className={mobileNavLinkClass}
+            >
+              <Clock className="w-4 h-4 text-teal-600" />
+              Track Queue
+            </NavLink>
+          )}
 
           {isAuthenticated ? (
             <>
-              {isPatient && (
+              {isDoctor && (
                 <NavLink
-                  to="/appointments"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={mobileNavLinkClass}
-                >
-                  <Calendar className="w-4 h-4 text-teal-600" />
-                  My Appointments
-                </NavLink>
-              )}
-              {(isPatient || user?.role === 'doctor') && (
-                isPatient ? (
-                <NavLink
-                  to="/dashboard"
+                  to="/doctor/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
                   className={mobileNavLinkClass}
                 >
                   <LayoutDashboard className="w-4 h-4 text-teal-600" />
-                  Dashboard
+                  Doctor Desk
                 </NavLink>
-                ) : (
-                  <NavLink
-                    to="/doctor/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={mobileNavLinkClass}
-                  >
-                    <LayoutDashboard className="w-4 h-4 text-teal-600" />
-                    Doctor Desk
-                  </NavLink>
-                )
               )}
-              {isStaff && (
+              {canUseStaffDesk && (
                 <NavLink
                   to="/staff/queue"
                   onClick={() => setMobileMenuOpen(false)}

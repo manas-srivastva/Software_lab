@@ -10,7 +10,30 @@ import {
   AlertCircle,
   UserCheck,
   ShieldCheck,
+  Stethoscope,
+  Building2,
 } from 'lucide-react';
+
+const demoAccounts = [
+  { label: 'Patient', status: 'Standard patient', email: 'john.doe@example.com' },
+  { label: 'Doctor · David Kim', status: 'Approved & active', email: 'dr.kim@mediqueue.com' },
+  { label: 'Doctor · Sarah Jenkins', status: 'Approved & active', email: 'dr.jenkins@mediqueue.com' },
+  { label: 'Doctor · Alex Morgan', status: 'Pending review', email: 'dr.pending@mediqueue.com' },
+  { label: 'Doctor · Lisa Ray', status: 'Needs changes', email: 'dr.changes@mediqueue.com' },
+  { label: 'Receptionist', status: 'Staff desk access', email: 'receptionist@mediqueue.com' },
+  { label: 'Admin', status: 'Hospital administrator', email: 'admin@mediqueue.com' },
+];
+
+const getRoleDashboard = (role) =>
+  role === 'orgAdmin'
+    ? '/org/dashboard'
+    : role === 'superadmin'
+      ? '/admin/organisations'
+      : role === 'admin' || role === 'receptionist'
+        ? '/staff/queue'
+        : role === 'doctor'
+          ? '/doctor/dashboard'
+          : '/dashboard';
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -26,7 +49,7 @@ const LoginPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // If redirected from expired session or protected route
-  const fromLocation = location.state?.from?.pathname || '/dashboard';
+  const fromLocation = location.state?.from?.pathname;
   const queryParams = new URLSearchParams(location.search);
   const isExpired = queryParams.get('expired') === '1';
 
@@ -48,7 +71,7 @@ const LoginPage = () => {
     setIsSubmitting(false);
 
     if (result.success) {
-      navigate(fromLocation, { replace: true });
+      navigate(fromLocation || getRoleDashboard(result.user?.role), { replace: true });
     } else {
       setErrorMsg(result.message || 'Invalid email or password');
     }
@@ -70,7 +93,7 @@ const LoginPage = () => {
             Sign In to MediQueue
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Access your patient portal, appointments, and live token status
+            Sign in to the workspace designed for your role
           </p>
         </div>
 
@@ -148,36 +171,45 @@ const LoginPage = () => {
           </button>
         </form>
 
-        {/* Quick Demo Logins for instant evaluation */}
+        {/* Demo account buttons only fill the form; the user submits the login manually. */}
         <div className="mt-8 pt-6 border-t border-slate-100">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">
-            One-Click Demo Credentials
+            Demo accounts · click to fill, then sign in
           </p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => handleFillDemo('john.doe@example.com', 'password123')}
-              className="p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50 text-slate-700 hover:text-teal-800 border border-slate-200 hover:border-teal-300 font-semibold transition text-left flex items-center gap-2"
-            >
-              <UserCheck className="w-4 h-4 text-teal-600 shrink-0" />
-              <div>
-                <p className="font-bold">Patient Demo</p>
-                <p className="text-[10px] text-slate-400 font-normal">john.doe@example.com</p>
-              </div>
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            {demoAccounts.map((account) => {
+              const isPatientAccount = account.label === 'Patient';
+              const isDoctorAccount = account.label.startsWith('Doctor');
+              const Icon = isPatientAccount ? UserCheck : isDoctorAccount ? Stethoscope :
+                account.label === 'Receptionist' ? ShieldCheck : Building2;
+              const accentClasses = isPatientAccount
+                ? 'hover:bg-teal-50 hover:text-teal-800 hover:border-teal-300 text-teal-600'
+                : isDoctorAccount
+                  ? 'hover:bg-sky-50 hover:text-sky-800 hover:border-sky-300 text-sky-600'
+                  : account.label === 'Receptionist'
+                    ? 'hover:bg-purple-50 hover:text-purple-800 hover:border-purple-300 text-purple-600'
+                    : 'hover:bg-indigo-50 hover:text-indigo-800 hover:border-indigo-300 text-indigo-600';
 
-            <button
-              type="button"
-              onClick={() => handleFillDemo('receptionist@mediqueue.com', 'password123')}
-              className="p-2.5 rounded-xl bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-purple-800 border border-slate-200 hover:border-purple-300 font-semibold transition text-left flex items-center gap-2"
-            >
-              <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
-              <div>
-                <p className="font-bold">Staff Demo</p>
-                <p className="text-[10px] text-slate-400 font-normal">receptionist@mediqueue.com</p>
-              </div>
-            </button>
+              return (
+                <button
+                  key={account.email}
+                  type="button"
+                  onClick={() => handleFillDemo(account.email, 'password123')}
+                  className={`p-2.5 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 font-semibold transition text-left flex items-center gap-2 ${accentClasses}`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block font-bold">{account.label}</span>
+                    <span className="block text-[10px] text-slate-500 font-normal">{account.status}</span>
+                    <span className="block text-[10px] text-slate-400 font-normal truncate">{account.email}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
+          <p className="mt-3 text-[10px] text-slate-400 text-center">
+            Demo accounts use password <span className="font-semibold">password123</span> and must exist in the configured database.
+          </p>
         </div>
 
         <div className="mt-6 text-center">
