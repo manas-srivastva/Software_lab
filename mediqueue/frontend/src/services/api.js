@@ -108,7 +108,10 @@ export const appointmentAPI = {
 export const queueAPI = {
   checkIn: (appointmentId) => api.post(`/queue/check-in/${appointmentId}`),
   getMyStatus: () => api.get('/queue/my-status'),
-  getDoctorQueue: (doctorId, date) => api.get(`/queue/doctor/${doctorId}`, { params: { date } }),
+  getDoctorQueue: (doctorId, params) =>
+    api.get(`/queue/doctor/${doctorId}`, {
+      params: typeof params === 'string' || params == null ? { date: params } : params,
+    }),
   advanceQueue: (queueId, data = {}) => api.patch(`/queue/${queueId}/advance`, data),
 };
 

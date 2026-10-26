@@ -27,9 +27,10 @@ router.get(
   getAllAppointments
 );
 router.get('/:id', requireOrganisationContext, getAppointmentById);
+// Only patients can cancel their own personal appointments
 router.patch(
   '/:id/cancel',
-  authorizeRoles('patient', 'receptionist', 'admin', 'superadmin', 'orgAdmin'),
+  authorizeRoles('patient'),
   requireOrganisationContext,
   cancelAppointment
 );

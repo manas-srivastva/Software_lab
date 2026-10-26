@@ -28,6 +28,9 @@ const DoctorDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [completingId, setCompletingId] = useState(null);
+  const [resubmitting, setResubmitting] = useState(false);
+  const [resubmitNotes, setResubmitNotes] = useState('');
+  const [showResubmitBox, setShowResubmitBox] = useState(false);
 
   const loadDoctorData = async () => {
     setLoading(true);
@@ -88,6 +91,28 @@ const DoctorDashboardPage = () => {
     }
   };
 
+  const handleResubmit = async (event) => {
+    event.preventDefault();
+    if (!resubmitNotes.trim()) {
+      toastError('Please provide notes explaining the updates made to your application.');
+      return;
+    }
+    setResubmitting(true);
+    try {
+      const res = await doctorAPI.resubmitApplication({
+        resubmissionNotes: resubmitNotes.trim(),
+      });
+      success(res.data.message || 'Application resubmitted successfully!');
+      setShowResubmitBox(false);
+      setResubmitNotes('');
+      await loadDoctorData();
+    } catch (err) {
+      toastError(err.message || 'Failed to resubmit application.');
+    } finally {
+      setResubmitting(false);
+    }
+  };
+
   if (loading && !doctor) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center text-sm text-slate-500">
@@ -136,6 +161,99 @@ const DoctorDashboardPage = () => {
           Refresh
         </button>
       </header>
+
+      {/* Doctor Onboarding & Application Status Alert */}
+      {doctor?.verificationStatus !== 'APPROVED' && (
+        <section className={`rounded-3xl p-6 sm:p-7 border shadow-sm ${
+          doctor?.verificationStatus === 'NEEDS_CHANGES'
+            ? 'bg-amber-50/90 border-amber-200 text-amber-900'
+            : doctor?.verificationStatus === 'REJECTED' || doctor?.verificationStatus === 'SUSPENDED'
+            ? 'bg-rose-50/90 border-rose-200 text-rose-900'
+            : 'bg-sky-50/90 border-sky-200 text-sky-900'
+        }`}>
+          <div className="flex items-start gap-4">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${
+              doctor?.verificationStatus === 'NEEDS_CHANGES'
+                ? 'bg-amber-100 text-amber-700 border-amber-300'
+                : doctor?.verificationStatus === 'REJECTED' || doctor?.verificationStatus === 'SUSPENDED'
+                ? 'bg-rose-100 text-rose-700 border-rose-300'
+                : 'bg-sky-100 text-sky-700 border-sky-300'
+            }`}>
+              <AlertCircle className="w-5 h-5 stroke-[2.2]" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-base font-extrabold tracking-tight">
+                  {doctor?.verificationStatus === 'PENDING' && 'Application Pending Administrative Review'}
+                  {doctor?.verificationStatus === 'NEEDS_CHANGES' && 'Action Required: Application Updates Requested'}
+                  {doctor?.verificationStatus === 'REJECTED' && 'Application Rejected by Administration'}
+                  {doctor?.verificationStatus === 'SUSPENDED' && 'Doctor Account Suspended'}
+                </h2>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-white/80 border border-current">
+                  Status: {doctor?.verificationStatus}
+                </span>
+              </div>
+
+              <p className="text-xs sm:text-sm leading-relaxed opacity-90">
+                {doctor?.verificationStatus === 'PENDING' &&
+                  'Your medical registration, credentials, and verification documents are currently undergoing review by the hospital administration. Once approved, your profile will be listed publicly, you can configure consultation availability, and begin accepting patient appointments.'}
+                {(doctor?.verificationStatus === 'NEEDS_CHANGES' ||
+                  doctor?.verificationStatus === 'REJECTED' ||
+                  doctor?.verificationStatus === 'SUSPENDED') && (
+                  <span>
+                    <strong className="font-bold">Official Administration Notes: </strong>
+                    {doctor?.statusReason || 'Please review your application information.'}
+                  </span>
+                )}
+              </p>
+
+              {doctor?.verificationStatus === 'NEEDS_CHANGES' && (
+                <div className="pt-2">
+                  {!showResubmitBox ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowResubmitBox(true)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-700 hover:bg-amber-800 shadow-sm transition"
+                    >
+                      Update &amp; Resubmit Application
+                    </button>
+                  ) : (
+                    <form onSubmit={handleResubmit} className="space-y-3 pt-2 bg-white/70 p-4 rounded-2xl border border-amber-200">
+                      <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Resubmission Notes for Reviewer
+                      </label>
+                      <textarea
+                        value={resubmitNotes}
+                        onChange={(e) => setResubmitNotes(e.target.value)}
+                        placeholder="Explain the updates made (e.g. updated registration certificate copy, corrected room number or clinic address)..."
+                        rows={3}
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                        required
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="submit"
+                          disabled={resubmitting}
+                          className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-700 hover:bg-amber-800 disabled:opacity-50 transition shadow-sm"
+                        >
+                          {resubmitting ? 'Submitting...' : 'Confirm Resubmission'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowResubmitBox(false)}
+                          className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Schedule & Availability Settings Form */}
       <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-5">
@@ -206,15 +324,21 @@ const DoctorDashboardPage = () => {
             <p className="text-[11px] text-slate-400 mt-1 font-medium">Used to compute live waiting interval forecasts for queue tokens.</p>
           </div>
 
-          <div className="md:col-span-2 pt-2">
+          <div className="md:col-span-2 pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <button
               type="submit"
-              disabled={saving}
-              className="px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 flex items-center gap-2 shadow-md shadow-teal-700/20 transition hover:-translate-y-0.5"
+              disabled={saving || doctor?.verificationStatus !== 'APPROVED'}
+              className="px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shadow-md shadow-teal-700/20 transition hover:-translate-y-0.5"
             >
               <Save className="w-4 h-4" />
               {saving ? 'Saving Changes...' : 'Save Availability Settings'}
             </button>
+            {doctor?.verificationStatus !== 'APPROVED' && (
+              <span className="text-xs font-semibold text-amber-700 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" />
+                Availability unlocks after administrative approval.
+              </span>
+            )}
           </div>
         </form>
       </section>

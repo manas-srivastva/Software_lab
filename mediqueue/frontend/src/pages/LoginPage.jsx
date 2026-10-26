@@ -62,7 +62,11 @@ const LoginPage = () => {
     setIsSubmitting(false);
 
     if (result.success) {
-      navigate(fromLocation || getRoleDashboard(result.user?.role), { replace: true });
+      const targetDashboard = getRoleDashboard(result.user?.role);
+      const destination = (!fromLocation || fromLocation === '/' || fromLocation === '/login')
+        ? targetDashboard
+        : fromLocation;
+      navigate(destination, { replace: true });
     } else {
       setErrorMsg(result.message || 'Invalid email or password');
     }

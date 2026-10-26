@@ -9,6 +9,14 @@ const { isBookableDate } = require('../utils/appointmentDate');
 // @access  Private (Patient)
 const createAppointment = async (req, res, next) => {
   try {
+    // Strict RBAC: Only patients can book appointments
+    if (req.user?.role !== 'patient') {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Only patients can book medical appointments',
+      });
+    }
+
     const { doctorId, orgId, date, time, reason } = req.body;
 
     // Validation
@@ -81,7 +89,7 @@ const createAppointment = async (req, res, next) => {
       });
     }
 
-    // Pre-check for conflicting active booking
+    // Pre-check for conflicting active booking for this doctor/slot
     const existingConflict = await Appointment.findOne({
       doctorId,
       date,
@@ -93,6 +101,36 @@ const createAppointment = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         message: 'This appointment slot has already been booked by another patient. Please choose a different time slot.',
+      });
+    }
+
+    // Prevent duplicate active booking by same patient with same doctor on same date
+    const existingPatientBooking = await Appointment.findOne({
+      patientId: req.user._id,
+      doctorId,
+      date,
+      status: { $in: ['pending', 'confirmed', 'checked-in', 'in-consultation'] },
+    });
+
+    if (existingPatientBooking) {
+      return res.status(409).json({
+        success: false,
+        message: `You already have an active appointment scheduled with Dr. ${doctor.name} on ${date} at ${existingPatientBooking.time}.`,
+      });
+    }
+
+    // Prevent double booking patient at the exact same date and time
+    const conflictingPatientTime = await Appointment.findOne({
+      patientId: req.user._id,
+      date,
+      time,
+      status: { $in: ['pending', 'confirmed', 'checked-in', 'in-consultation'] },
+    });
+
+    if (conflictingPatientTime) {
+      return res.status(409).json({
+        success: false,
+        message: `You already have another active appointment booked at ${time} on ${date}.`,
       });
     }
 
@@ -225,17 +263,12 @@ const cancelAppointment = async (req, res, next) => {
       });
     }
 
-    // Verify ownership or staff role
+    // Strict RBAC: Only PATIENT can cancel their own personal appointments
     const isOwner = appointment.patientId.toString() === req.user._id.toString();
-    const isStaff = ['receptionist', 'admin', 'superadmin'].includes(req.user.role);
-    const isOrgAdmin = req.user.role === 'orgAdmin' || req.user.roles?.includes('orgAdmin');
-
-    const isInOrg = isOrgAdmin && req.user.orgId &&
-      appointment.orgId?.toString() === req.user.orgId.toString();
-    if (!isOwner && !isStaff && !isInOrg) {
+    if (req.user?.role !== 'patient' || !isOwner) {
       return res.status(403).json({
         success: false,
-        message: 'Forbidden: You cannot cancel another patient’s appointment',
+        message: 'Forbidden: Only the patient who booked this appointment can cancel it',
       });
     }
 

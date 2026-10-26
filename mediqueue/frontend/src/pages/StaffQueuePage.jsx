@@ -3,7 +3,6 @@ import { doctorAPI, queueAPI, appointmentAPI, organisationAPI } from '../service
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import StatusBadge from '../components/StatusBadge';
-import ConfirmModal from '../components/ConfirmModal';
 import {
   ShieldCheck,
   RefreshCw,
@@ -18,7 +17,6 @@ import {
   AlertCircle,
   UserCheck,
   ChevronRight,
-  XCircle,
   Building2,
 } from 'lucide-react';
 
@@ -37,8 +35,6 @@ const StaffQueuePage = () => {
   const [allAppointments, setAllAppointments] = useState([]);
   const [loadingAppts, setLoadingAppts] = useState(false);
   const [appointmentsError, setAppointmentsError] = useState('');
-  const [appointmentToCancel, setAppointmentToCancel] = useState(null);
-  const [cancellingAppointmentId, setCancellingAppointmentId] = useState(null);
   const knownAppointmentIds = useRef(null);
   const isOrgAdmin = user?.role === 'orgAdmin' || user?.roles?.includes('orgAdmin');
 
@@ -135,21 +131,6 @@ const StaffQueuePage = () => {
 
     return () => clearInterval(intervalId);
   }, [selectedDate]);
-
-  const handleConfirmCancel = async () => {
-    if (!appointmentToCancel) return;
-    setCancellingAppointmentId(appointmentToCancel._id);
-    try {
-      const res = await appointmentAPI.cancelAppointment(appointmentToCancel._id);
-      success(res.data.message || 'Appointment cancelled successfully.');
-      await fetchAppointments({ notifyNew: true });
-    } catch (err) {
-      toastError(err.message || 'Failed to cancel appointment.');
-    } finally {
-      setCancellingAppointmentId(null);
-      setAppointmentToCancel(null);
-    }
-  };
 
   const handleCheckIn = async (appointment) => {
     try {
@@ -493,7 +474,7 @@ const StaffQueuePage = () => {
                         <div className="inline-flex items-center gap-2 justify-end">
                           {user?.role === 'receptionist' &&
                             appt.status === 'confirmed' &&
-                            appt.date === selectedDate && (
+                            appt.date === selectedDate ? (
                             <button
                               type="button"
                               onClick={() => handleCheckIn(appt)}
@@ -501,17 +482,14 @@ const StaffQueuePage = () => {
                             >
                               Confirm Check-in
                             </button>
-                          )}
-                          {!['cancelled', 'completed', 'in-consultation'].includes(appt.status) && (
-                            <button
-                              type="button"
-                              onClick={() => setAppointmentToCancel(appt)}
-                              disabled={cancellingAppointmentId === appt._id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 disabled:opacity-50 transition"
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                              Cancel
-                            </button>
+                          ) : (
+                            <span className="text-[11px] font-medium text-slate-400">
+                              {appt.status === 'checked-in'
+                                ? 'In Queue'
+                                : appt.status === 'confirmed'
+                                ? 'Scheduled'
+                                : appt.status}
+                            </span>
                           )}
                         </div>
                       </td>
@@ -521,21 +499,6 @@ const StaffQueuePage = () => {
               </table>
             </div>
           )}
-
-          <ConfirmModal
-            isOpen={!!appointmentToCancel}
-            onClose={() => setAppointmentToCancel(null)}
-            onConfirm={handleConfirmCancel}
-            title="Cancel this appointment?"
-            message={
-              appointmentToCancel
-                ? `Cancel ${appointmentToCancel.patientId?.name || 'this patient'}'s appointment with ${
-                    appointmentToCancel.doctorId?.name || 'the selected doctor'
-                  } on ${appointmentToCancel.date} at ${appointmentToCancel.time}?`
-                : ''
-            }
-            confirmText="Cancel Appointment"
-          />
         </div>
       )}
     </div>
