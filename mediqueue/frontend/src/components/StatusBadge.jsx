@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, CheckCircle2, AlertCircle, PlayCircle, XCircle } from 'lucide-react';
+import { Clock, CheckCircle2, PlayCircle, XCircle, AlertCircle } from 'lucide-react';
 
 const StatusBadge = ({ status }) => {
   const normalized = (status || '').toLowerCase();
@@ -7,23 +7,26 @@ const StatusBadge = ({ status }) => {
   switch (normalized) {
     case 'confirmed':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
           Confirmed
         </span>
       );
     case 'checked-in':
     case 'waiting':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 animate-pulse">
-          <Clock className="w-3.5 h-3.5 text-amber-600" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping opacity-75" />
           In Queue (Waiting)
         </span>
       );
     case 'in-consultation':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-300 ring-2 ring-teal-200">
-          <PlayCircle className="w-3.5 h-3.5 text-teal-600 animate-spin" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-300 ring-1 ring-teal-200/80">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-600"></span>
+          </span>
           In Consultation
         </span>
       );
@@ -44,9 +47,9 @@ const StatusBadge = ({ status }) => {
     case 'pending':
     default:
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-          <Clock className="w-3.5 h-3.5 text-blue-500" />
-          {status || 'Pending'}
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-200">
+          <Clock className="w-3.5 h-3.5 text-sky-600" />
+          {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Pending'}
         </span>
       );
   }

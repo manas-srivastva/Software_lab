@@ -96,23 +96,23 @@ const RegisterPage = () => {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100">
+      <div className="w-full max-w-md bg-white rounded-3xl p-7 sm:p-10 shadow-xl shadow-slate-900/5 border border-slate-200/90">
         <div className="text-center mb-8">
-          <div className="inline-flex w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 items-center justify-center mb-3">
+          <div className="inline-flex w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 text-teal-700 items-center justify-center mb-3 shadow-sm">
             <Activity className="w-6 h-6 stroke-[2.5]" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Patient Registration
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Create an account to book consultations and monitor live hospital queue tokens
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+            Create an account to book consultations and monitor live hospital queue tokens.
           </p>
         </div>
 
         {generalError && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2.5">
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs sm:text-sm flex items-start gap-2.5">
             <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-            <span>{generalError}</span>
+            <span className="font-medium">{generalError}</span>
           </div>
         )}
 
@@ -132,14 +132,14 @@ const RegisterPage = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="e.g. Eleanor Vance"
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition focus:outline-none focus:ring-2 ${
+                className={`w-full pl-10 pr-4 py-3 rounded-2xl border text-sm font-medium transition focus:outline-none focus:ring-2 ${
                   errors.name
-                    ? 'border-rose-300 focus:ring-rose-500'
+                    ? 'border-rose-300 focus:ring-rose-500/20'
                     : 'border-slate-200 focus:border-teal-500 focus:ring-teal-500/20'
                 }`}
               />
             </div>
-            {errors.name && <p className="text-xs text-rose-600 mt-1">{errors.name}</p>}
+            {errors.name && <p className="text-xs text-rose-600 mt-1 font-medium">{errors.name}</p>}
           </div>
 
           {/* Email Address */}
@@ -157,14 +157,14 @@ const RegisterPage = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition focus:outline-none focus:ring-2 ${
+                className={`w-full pl-10 pr-4 py-3 rounded-2xl border text-sm font-medium transition focus:outline-none focus:ring-2 ${
                   errors.email
-                    ? 'border-rose-300 focus:ring-rose-500'
+                    ? 'border-rose-300 focus:ring-rose-500/20'
                     : 'border-slate-200 focus:border-teal-500 focus:ring-teal-500/20'
                 }`}
               />
             </div>
-            {errors.email && <p className="text-xs text-rose-600 mt-1">{errors.email}</p>}
+            {errors.email && <p className="text-xs text-rose-600 mt-1 font-medium">{errors.email}</p>}
           </div>
 
           {/* Phone Number */}
@@ -182,14 +182,14 @@ const RegisterPage = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="+1 555-0123"
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition focus:outline-none focus:ring-2 ${
+                className={`w-full pl-10 pr-4 py-3 rounded-2xl border text-sm font-medium transition focus:outline-none focus:ring-2 ${
                   errors.phone
-                    ? 'border-rose-300 focus:ring-rose-500'
+                    ? 'border-rose-300 focus:ring-rose-500/20'
                     : 'border-slate-200 focus:border-teal-500 focus:ring-teal-500/20'
                 }`}
               />
             </div>
-            {errors.phone && <p className="text-xs text-rose-600 mt-1">{errors.phone}</p>}
+            {errors.phone && <p className="text-xs text-rose-600 mt-1 font-medium">{errors.phone}</p>}
           </div>
 
           {/* Password */}
@@ -207,14 +207,14 @@ const RegisterPage = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="At least 6 characters"
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition focus:outline-none focus:ring-2 ${
+                className={`w-full pl-10 pr-4 py-3 rounded-2xl border text-sm font-medium transition focus:outline-none focus:ring-2 ${
                   errors.password
-                    ? 'border-rose-300 focus:ring-rose-500'
+                    ? 'border-rose-300 focus:ring-rose-500/20'
                     : 'border-slate-200 focus:border-teal-500 focus:ring-teal-500/20'
                 }`}
               />
             </div>
-            {errors.password && <p className="text-xs text-rose-600 mt-1">{errors.password}</p>}
+            {errors.password && <p className="text-xs text-rose-600 mt-1 font-medium">{errors.password}</p>}
           </div>
 
           {/* Confirm Password */}
@@ -232,22 +232,22 @@ const RegisterPage = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Re-enter password"
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition focus:outline-none focus:ring-2 ${
+                className={`w-full pl-10 pr-4 py-3 rounded-2xl border text-sm font-medium transition focus:outline-none focus:ring-2 ${
                   errors.confirmPassword
-                    ? 'border-rose-300 focus:ring-rose-500'
+                    ? 'border-rose-300 focus:ring-rose-500/20'
                     : 'border-slate-200 focus:border-teal-500 focus:ring-teal-500/20'
                 }`}
               />
             </div>
             {errors.confirmPassword && (
-              <p className="text-xs text-rose-600 mt-1">{errors.confirmPassword}</p>
+              <p className="text-xs text-rose-600 mt-1 font-medium">{errors.confirmPassword}</p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full mt-4 py-3 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-600/30 transition disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full mt-4 py-3.5 rounded-2xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-700/20 transition-all disabled:opacity-60 flex items-center justify-center gap-2 hover:-translate-y-0.5 text-sm"
           >
             {isSubmitting ? (
               <>
@@ -256,7 +256,7 @@ const RegisterPage = () => {
               </>
             ) : (
               <>
-                Create Account
+                Create Patient Account
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -264,9 +264,9 @@ const RegisterPage = () => {
         </form>
 
         <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-          <p className="text-sm text-slate-600">
+          <p className="text-xs sm:text-sm text-slate-600">
             Already registered?{' '}
-            <Link to="/login" className="font-bold text-teal-600 hover:text-teal-700">
+            <Link to="/login" className="font-bold text-teal-700 hover:text-teal-900">
               Log in here
             </Link>
           </p>

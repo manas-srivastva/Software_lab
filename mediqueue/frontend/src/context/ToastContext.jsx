@@ -28,8 +28,12 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={{ success, error, info, addToast, removeToast }}>
       {children}
-      {/* Toast Render Container */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+      {/* Toast Notification Container */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0"
+      >
         {toasts.map((toast) => {
           const isSuccess = toast.type === 'success';
           const isError = toast.type === 'error';
@@ -37,23 +41,26 @@ export const ToastProvider = ({ children }) => {
           return (
             <div
               key={toast.id}
-              className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border text-sm transition-all transform duration-300 animate-in slide-in-from-bottom-5 ${
+              role="alert"
+              className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl shadow-xl border text-sm transition-all transform duration-200 animate-in slide-in-from-bottom-4 ${
                 isSuccess
-                  ? 'bg-teal-50 border-teal-200 text-teal-900'
+                  ? 'bg-emerald-50/95 border-emerald-200 text-emerald-950 backdrop-blur-sm'
                   : isError
-                  ? 'bg-rose-50 border-rose-200 text-rose-900'
-                  : 'bg-slate-900 border-slate-800 text-white'
+                  ? 'bg-rose-50/95 border-rose-200 text-rose-950 backdrop-blur-sm'
+                  : 'bg-slate-900/95 border-slate-800 text-white backdrop-blur-sm'
               }`}
             >
               <div className="shrink-0 mt-0.5">
-                {isSuccess && <CheckCircle2 className="w-5 h-5 text-teal-600" />}
+                {isSuccess && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
                 {isError && <AlertCircle className="w-5 h-5 text-rose-600" />}
-                {!isSuccess && !isError && <Info className="w-5 h-5 text-sky-400" />}
+                {!isSuccess && !isError && <Info className="w-5 h-5 text-teal-400" />}
               </div>
-              <div className="flex-1 font-medium">{toast.message}</div>
+              <div className="flex-1 font-medium leading-snug">{toast.message}</div>
               <button
+                type="button"
                 onClick={() => removeToast(toast.id)}
-                className="shrink-0 text-slate-400 hover:text-slate-600 p-0.5 rounded transition"
+                aria-label="Dismiss notification"
+                className="shrink-0 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-black/5 transition"
               >
                 <X className="w-4 h-4" />
               </button>

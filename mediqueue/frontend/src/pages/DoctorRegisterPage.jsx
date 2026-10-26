@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Loader2,
   CheckCircle,
+  ShieldCheck,
 } from 'lucide-react';
 
 const DoctorRegisterPage = () => {
@@ -157,35 +158,42 @@ const DoctorRegisterPage = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xl overflow-hidden">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden">
         {/* Header banner */}
-        <div className="bg-gradient-to-r from-teal-700 via-teal-600 to-cyan-600 px-6 sm:px-10 py-8 text-white">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-bold tracking-wider uppercase backdrop-blur-sm mb-3">
-            <Stethoscope className="w-4 h-4" /> Doctor Onboarding
+        <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-cyan-800 px-7 sm:px-10 py-8 text-white relative overflow-hidden">
+          <div className="absolute -right-8 -top-16 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-bold tracking-wider uppercase backdrop-blur-sm mb-3 border border-white/20">
+              <Stethoscope className="w-3.5 h-3.5" /> Doctor Onboarding Portal
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Join MediQueue as a Certified Specialist
+            </h1>
+            <p className="text-teal-100 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
+              Submit your professional credentials and practice schedule. Our clinical administration team verifies every doctor license before public activation.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Join as a Medical Specialist</h1>
-          <p className="text-teal-100 text-sm mt-1 max-w-xl">
-            Submit your professional application to join MediQueue. Our clinical administration team verifies every doctor before activation.
-          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-8">
           {formError && (
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-3">
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs sm:text-sm flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-              <span>{formError}</span>
+              <span className="font-medium">{formError}</span>
             </div>
           )}
 
           {/* Section 1: Account details */}
-          <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
-              <User className="w-4 h-4 text-teal-600" /> Account & Personal Information
+          <div className="space-y-4">
+            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
+              <User className="w-4 h-4 text-teal-600" /> Account &amp; Personal Credentials
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name (with Dr. prefix)</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Full Name (with Dr. prefix)
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -193,23 +201,27 @@ const DoctorRegisterPage = () => {
                   placeholder="e.g. Dr. Alex Morgan"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   name="email"
                   required
-                  placeholder="doctor@example.com"
+                  placeholder="doctor@hospital.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Phone Number
+                </label>
                 <input
                   type="text"
                   name="phone"
@@ -217,11 +229,13 @@ const DoctorRegisterPage = () => {
                   placeholder="+1 555-0199"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Medical Registration / License #</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Medical Registration / State License #
+                </label>
                 <input
                   type="text"
                   name="medicalRegistrationNumber"
@@ -229,42 +243,48 @@ const DoctorRegisterPage = () => {
                   placeholder="e.g. MED-REG-49201"
                   value={formData.medicalRegistrationNumber}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Password (min 6 chars)</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Password (min 6 chars)
+                </label>
                 <input
                   type="password"
                   name="password"
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Confirm Password</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Confirm Password
+                </label>
                 <input
                   type="password"
                   name="confirmPassword"
                   required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 2: Professional qualifications */}
-          <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Award className="w-4 h-4 text-teal-600" /> Professional Credentials & Practice
+          <div className="space-y-4">
+            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
+              <Award className="w-4 h-4 text-teal-600" /> Specialty, Department &amp; Practice Details
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Specialization</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Specialization
+                </label>
                 <input
                   type="text"
                   name="specialization"
@@ -272,16 +292,18 @@ const DoctorRegisterPage = () => {
                   placeholder="e.g. Cardiologist, Dermatologist"
                   value={formData.specialization}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Clinical Department</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Clinical Department
+                </label>
                 <select
                   name="department"
                   value={formData.department}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white"
                 >
                   <option value="General Medicine">General Medicine</option>
                   <option value="Cardiology">Cardiology</option>
@@ -294,7 +316,9 @@ const DoctorRegisterPage = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Degrees & Qualifications</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Degrees &amp; Qualifications
+                </label>
                 <input
                   type="text"
                   name="qualifications"
@@ -302,11 +326,13 @@ const DoctorRegisterPage = () => {
                   placeholder="e.g. MBBS, MD, Board Certified"
                   value={formData.qualifications}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Years of Experience</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Years of Practice Experience
+                </label>
                 <input
                   type="number"
                   name="experienceYears"
@@ -314,53 +340,74 @@ const DoctorRegisterPage = () => {
                   max="60"
                   value={formData.experienceYears}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Clinic / Hospital Affiliation</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Primary Clinic / Hospital Affiliation
+                </label>
                 <input
                   type="text"
                   name="clinicHospitalName"
                   placeholder="MediQueue Central Hospital"
                   value={formData.clinicHospitalName}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Consultation Room</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Consultation Room
+                </label>
                 <input
                   type="text"
                   name="roomNumber"
                   placeholder="OPD Suite 204"
                   value={formData.roomNumber}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Practice City</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Practice City
+                </label>
                 <input
                   type="text"
                   name="city"
                   placeholder="City"
                   value={formData.city}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Clinic Street Address
+                </label>
+                <input
+                  type="text"
+                  name="clinicAddress"
+                  placeholder="Street Address"
+                  value={formData.clinicAddress}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 3: Availability & timings */}
-          <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Calendar className="w-4 h-4 text-teal-600" /> Consultation Timings
+          <div className="space-y-4">
+            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
+              <Calendar className="w-4 h-4 text-teal-600" /> Consultation Schedule Template
             </h2>
-            <div className="mt-4 space-y-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-2">Available Consultation Days</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Available Consultation Days
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {daysList.map((day) => {
                     const isSelected = formData.availableDays.includes(day);
@@ -369,7 +416,7 @@ const DoctorRegisterPage = () => {
                         type="button"
                         key={day}
                         onClick={() => handleDayToggle(day)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition border ${
                           isSelected
                             ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -383,7 +430,9 @@ const DoctorRegisterPage = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-2">Available Time Slots</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Available Consultation Slots
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {allSlots.map((slot) => {
                     const isSelected = formData.availableSlots.includes(slot);
@@ -392,9 +441,9 @@ const DoctorRegisterPage = () => {
                         type="button"
                         key={slot}
                         onClick={() => handleSlotToggle(slot)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition border ${
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition border ${
                           isSelected
-                            ? 'bg-teal-600 text-white border-teal-600'
+                            ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
@@ -406,7 +455,7 @@ const DoctorRegisterPage = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Average Consultation Duration (Minutes)
                 </label>
                 <input
@@ -416,20 +465,20 @@ const DoctorRegisterPage = () => {
                   max="60"
                   value={formData.averageConsultationMinutes}
                   onChange={handleChange}
-                  className="w-40 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-44 px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 4: Verification Document */}
-          <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
+          <div className="space-y-4">
+            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
               <FileCheck2 className="w-4 h-4 text-teal-600" /> Verification Document Reference
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   License Document Name / Label
                 </label>
                 <input
@@ -438,11 +487,11 @@ const DoctorRegisterPage = () => {
                   placeholder="State_Medical_Council_License.pdf"
                   value={formData.licenseDocumentName}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Document URL / Verification Link
                 </label>
                 <input
@@ -451,20 +500,20 @@ const DoctorRegisterPage = () => {
                   placeholder="https://docs.mediqueue.health/license.pdf"
                   value={formData.licenseDocumentUrl}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-medium focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
             </div>
           </div>
 
-          <div className="pt-4 flex items-center justify-between gap-4 border-t border-slate-100">
-            <Link to="/login" className="text-xs font-semibold text-slate-500 hover:text-slate-800">
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100">
+            <Link to="/login" className="text-xs font-bold text-slate-500 hover:text-slate-800">
               Already have an account? Log in
             </Link>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-600/20 disabled:opacity-50 flex items-center gap-2 text-sm"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-700/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm hover:-translate-y-0.5"
             >
               {loading ? (
                 <>

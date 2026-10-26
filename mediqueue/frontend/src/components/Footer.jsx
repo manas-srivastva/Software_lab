@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Phone, Mail, MapPin, Clock, ShieldCheck } from 'lucide-react';
+import { Activity, Phone, Mail, MapPin, Clock, ShieldCheck, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Footer = () => {
@@ -40,37 +40,41 @@ const Footer = () => {
   }
 
   return (
-    <footer className="bg-slate-900 text-slate-300 border-t border-slate-800">
+    <footer className="bg-slate-950 text-slate-300 border-t border-slate-800/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Brand Info */}
+          {/* Brand & Mission */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-teal-500 flex items-center justify-center text-slate-900 shadow-md">
+              <div className="w-9 h-9 rounded-xl bg-teal-500 flex items-center justify-center text-slate-950 shadow-md shadow-teal-500/20">
                 <Activity className="w-5 h-5 stroke-[2.5]" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-white">
+              <span className="text-xl font-extrabold tracking-tight text-white">
                 Medi<span className="text-teal-400">Queue</span>
               </span>
             </div>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Transforming outpatient medical visits with transparent token queuing, automated waiting forecasts, and effortless specialist booking.
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              Modernizing outpatient hospital visits with verified doctor scheduling, real-time sequential token tracking, and algorithmic wait time estimates.
             </p>
-            <div className="flex items-center gap-2 text-xs text-teal-400 font-medium">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Privacy-conscious access and secure account sign-in</span>
+            <div className="flex items-center gap-2 text-xs text-teal-400 font-semibold pt-1">
+              <ShieldCheck className="w-4 h-4 shrink-0" />
+              <span>Role-governed clinical security &amp; privacy</span>
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-white mb-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-teal-400 mb-4">
               {quickLinksHeading}
             </h4>
-            <ul className="space-y-2.5 text-sm">
+            <ul className="space-y-2.5 text-xs sm:text-sm">
               {quickLinks.map(({ label, to }) => (
                 <li key={to}>
-                  <Link to={to} className="hover:text-teal-400 transition">
+                  <Link
+                    to={to}
+                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-500/60" />
                     {label}
                   </Link>
                 </li>
@@ -78,34 +82,34 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Departments */}
+          {/* Key Clinical Specialties */}
           <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-white mb-4">
-              Key Departments
+            <h4 className="text-xs font-bold uppercase tracking-wider text-teal-400 mb-4">
+              Clinical Departments
             </h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li>Cardiology & Heart Care</li>
-              <li>General Medicine & OPD</li>
-              <li>Pediatrics & Neonatal Care</li>
-              <li>Dermatology & Skin Center</li>
-              <li>Orthopedics & Joint Surgery</li>
-              <li>Neurology & Cognitive Health</li>
+            <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
+              <li>General Medicine &amp; Primary Care</li>
+              <li>Cardiology &amp; Cardiovascular Health</li>
+              <li>Pediatrics &amp; Adolescent Medicine</li>
+              <li>Dermatology &amp; Skin Care</li>
+              <li>Orthopedics &amp; Joint Replacement</li>
+              <li>Neurology &amp; Cognitive Health</li>
             </ul>
           </div>
 
-          {/* Contact Details */}
+          {/* Hospital Contact Info */}
           <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-white mb-4">
-              Hospital Contact
+            <h4 className="text-xs font-bold uppercase tracking-wider text-teal-400 mb-4">
+              Hospital Help Desk
             </h4>
-            <div className="space-y-3 text-sm text-slate-400">
+            <div className="space-y-3 text-xs sm:text-sm text-slate-400">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
                 <span>450 Healthcare Pavilion Way, Medical City, Suite 100</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-teal-400 shrink-0" />
-                <span>Emergency: +1 (800) 555-CARE (2273)</span>
+                <span className="text-white font-medium">+1 (800) 555-CARE (2273)</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-teal-400 shrink-0" />
@@ -120,12 +124,14 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} MediQueue Healthcare Technologies Inc. All rights reserved.</p>
+        <div className="mt-12 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+          <p className="flex items-center gap-1">
+            © {new Date().getFullYear()} MediQueue Smart Care System. Engineered for modern hospitals.
+          </p>
           <div className="flex items-center gap-6">
-            <span className="hover:text-slate-400 transition cursor-pointer">Privacy Policy</span>
-            <span className="hover:text-slate-400 transition cursor-pointer">Terms of Service</span>
-            <span className="hover:text-slate-400 transition cursor-pointer">Patient Bill of Rights</span>
+            <span className="hover:text-slate-300 transition cursor-pointer">Privacy Practices</span>
+            <span className="hover:text-slate-300 transition cursor-pointer">Terms of Service</span>
+            <span className="hover:text-slate-300 transition cursor-pointer">Patient Charter</span>
           </div>
         </div>
       </div>

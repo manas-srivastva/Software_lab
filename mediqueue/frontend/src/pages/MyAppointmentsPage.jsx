@@ -17,6 +17,7 @@ import {
   Loader2,
   ArrowRight,
   Filter,
+  Stethoscope,
 } from 'lucide-react';
 
 const getTodayDate = () => {
@@ -104,54 +105,54 @@ const MyAppointmentsPage = () => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6 sm:space-y-8">
       {/* Page Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-white via-white to-sky-50 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div className="relative overflow-hidden bg-gradient-to-br from-white via-white to-sky-50/80 p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="absolute -right-10 -top-16 w-56 h-56 rounded-full bg-sky-100/60 blur-3xl pointer-events-none" />
-        <div className="relative">
-          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100">
-            <Calendar className="w-3.5 h-3.5" />
-            Patient medical records
+        <div className="relative space-y-1.5">
+          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-teal-800 bg-teal-50 px-3 py-1 rounded-full border border-teal-200/80">
+            <Calendar className="w-3.5 h-3.5 text-teal-600" />
+            Patient Consultation Log
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             My Appointments
           </h1>
-          <p className="text-sm text-slate-500">
-            View your consultation schedule, check in on arrival, or cancel scheduled visits.
+          <p className="text-sm text-slate-500 max-w-xl">
+            Review your upcoming and past doctor visits, check in on arrival to receive queue tokens, and track consultation progress.
           </p>
         </div>
 
-        <div className="relative flex items-center gap-3">
+        <div className="relative flex items-center gap-2.5 shrink-0">
           <button
+            type="button"
             onClick={fetchAppointments}
             title="Refresh appointments"
             aria-label="Refresh appointments"
-            className="p-3 rounded-xl border border-slate-200 bg-white/80 text-slate-600 hover:text-teal-600 hover:bg-white transition"
+            className="p-3 rounded-2xl border border-slate-200 bg-white text-slate-600 hover:text-teal-700 hover:bg-slate-50 transition shadow-sm"
           >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
           <Link
             to="/book-appointment"
-            className="px-5 py-3 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-700/20 transition hover:-translate-y-0.5 flex items-center gap-2 text-sm"
+            className="px-5 py-3 rounded-2xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-700/20 transition hover:-translate-y-0.5 flex items-center gap-2 text-xs sm:text-sm"
           >
             <PlusCircle className="w-4 h-4" />
-            Book New
+            Book New Visit
           </Link>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+      <div className="flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-sm">
         {[
-          { id: 'all', label: `All (${appointments.length})` },
+          { id: 'all', label: `All Visits (${appointments.length})` },
           {
             id: 'upcoming',
             label: `Upcoming (${
               appointments.filter((a) =>
                 ['confirmed', 'checked-in', 'in-consultation'].includes(a.status)
-              )
-                .length
+              ).length
             })`,
           },
           {
@@ -165,11 +166,12 @@ const MyAppointmentsPage = () => {
         ].map((tab) => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setFilterTab(tab.id)}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               filterTab === tab.id
                 ? 'bg-teal-600 text-white shadow-sm shadow-teal-700/20'
-                : 'text-slate-600 hover:bg-slate-100'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
             }`}
           >
             {tab.label}
@@ -184,19 +186,19 @@ const MyAppointmentsPage = () => {
           Loading your medical appointments...
         </div>
       ) : filteredAppointments.length === 0 ? (
-        <div className="py-16 text-center bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-          <span className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 mx-auto mb-4 flex items-center justify-center">
+        <div className="py-16 text-center bg-white rounded-3xl border border-slate-200/90 p-8 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-100 text-teal-600 mx-auto mb-4 flex items-center justify-center">
             <Calendar className="w-7 h-7" />
-          </span>
-          <h3 className="text-lg font-bold text-slate-800">No appointments found</h3>
-          <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto mb-5">
+          </div>
+          <h3 className="text-lg font-bold text-slate-900">No appointments found</h3>
+          <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto mb-5 leading-relaxed">
             {filterTab === 'all'
-              ? 'You do not have any appointments yet.'
-              : `No appointments matching the '${filterTab}' filter.`}
+              ? 'You have not booked any appointments yet.'
+              : `You have no appointments in the '${filterTab}' status.`}
           </p>
           <Link
             to="/book-appointment"
-            className="px-5 py-2.5 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 text-xs inline-flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 text-xs inline-flex items-center gap-2 shadow-sm"
           >
             <PlusCircle className="w-4 h-4" />
             Book an Appointment
@@ -215,35 +217,36 @@ const MyAppointmentsPage = () => {
             return (
               <div
                 key={appt._id}
-                className="group bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-teal-200 transition flex flex-col md:flex-row md:items-center justify-between gap-6"
+                className="group bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md hover:border-teal-200/90 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
               >
                 {/* Doctor and Visit Details */}
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-3">
+                <div className="space-y-3.5 flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <StatusBadge status={appt.status} />
-                    <span className="text-xs font-semibold text-slate-400">
-                      Booking #{appt._id.substring(appt._id.length - 6).toUpperCase()}
+                    <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-150">
+                      Ref #{appt._id.substring(appt._id.length - 6).toUpperCase()}
                     </span>
                     {appt.queueEntry && (
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
-                        Token #{appt.queueEntry.tokenNumber}
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-900 border border-teal-200 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-teal-700" />
+                        Queue Token #{appt.queueEntry.tokenNumber}
                       </span>
                     )}
                   </div>
 
                   <div className="flex items-start gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100 text-teal-700 flex items-center justify-center font-black text-sm shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100 text-teal-700 flex items-center justify-center font-extrabold text-sm shrink-0 shadow-sm">
                       Dr
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-900 leading-tight">
-                        {appt.doctorId?.name}
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight truncate">
+                        {appt.doctorId?.name || 'Medical Specialist'}
                       </h3>
-                      <p className="text-xs font-semibold text-teal-600">
+                      <p className="text-xs font-bold text-teal-700 mt-0.5">
                         {appt.doctorId?.specialization} • {appt.doctorId?.department}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                      <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 truncate">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         {appt.orgId?.name || appt.doctorId?.roomNumber || 'Consultation Room'}
                       </p>
                     </div>
@@ -252,29 +255,32 @@ const MyAppointmentsPage = () => {
                   {/* Date, Time, and Reason */}
                   <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600 pt-1">
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-teal-600" />
+                      <Calendar className="w-4 h-4 text-teal-600 shrink-0" />
                       <span className="font-bold text-slate-800">{appt.date}</span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-teal-600" />
+                      <Clock className="w-4 h-4 text-teal-600 shrink-0" />
                       <span className="font-bold text-slate-800">{appt.time}</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 max-w-md truncate">
-                      <FileText className="w-4 h-4 text-slate-400" />
-                      <span className="italic text-slate-500">"{appt.reason}"</span>
-                    </div>
+                    {appt.reason && (
+                      <div className="flex items-center gap-1.5 max-w-md truncate">
+                        <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="italic text-slate-500 truncate">"{appt.reason}"</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Actions Button Bar */}
-                <div className="flex flex-wrap items-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+                <div className="flex flex-wrap items-center gap-2.5 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 shrink-0">
                   {canCheckIn && (
                     <button
+                      type="button"
                       onClick={() => handleCheckIn(appt._id)}
                       disabled={checkingInId === appt._id}
-                      className="px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition disabled:opacity-50 flex items-center gap-1.5"
+                      className="px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-teal-600 hover:bg-teal-700 shadow-sm shadow-teal-700/20 transition disabled:opacity-50 flex items-center gap-1.5"
                     >
                       {checkingInId === appt._id ? (
                         <>
@@ -284,7 +290,7 @@ const MyAppointmentsPage = () => {
                       ) : (
                         <>
                           <CheckCircle2 className="w-4 h-4" />
-                          Check In & Get Token
+                          Check In &amp; Get Token
                         </>
                       )}
                     </button>
@@ -302,8 +308,9 @@ const MyAppointmentsPage = () => {
 
                   {canCancel && (
                     <button
+                      type="button"
                       onClick={() => openCancelModal(appt)}
-                      className="px-4 py-2.5 rounded-xl font-bold text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition flex items-center gap-1.5"
+                      className="px-4 py-2.5 rounded-xl font-bold text-xs text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition flex items-center gap-1.5"
                     >
                       <XCircle className="w-4 h-4" />
                       Cancel Visit
